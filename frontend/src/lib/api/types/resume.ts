@@ -1,3 +1,39 @@
+export interface Experience {
+  title: string;
+  company: string;
+  location?: string;
+  startDate?: string;
+  endDate?: string;
+  technologies?: string;
+  bullets: string[];
+}
+
+export interface Project {
+  title: string;
+  description: string;
+  technologies?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface ResumeContent {
+  contact: {
+    name: string;
+    email: string;
+    phone?: string;
+    github?: string;
+    linkedin?: string;
+  };
+  experience: Experience[];
+  projects: Project[];
+  skills: string[];
+  education: Array<{
+    degree: string;
+    institution: string;
+    year: string;
+  }>;
+}
+
 export interface ResumeCreate {
   tracked_job_id: number;
   user_id: string;
@@ -9,6 +45,6 @@ export interface ResumeResponse {
   tracked_job_id: number;
   version_number: number;
   is_active: boolean;
-  resume_content: Record<string, any>;
+  resume_content: ResumeContent;
   created_at: string;
 }

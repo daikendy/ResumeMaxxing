@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { resumeService } from '@/lib/api/services/resumeService';
-import { LucideUpload, LucidePlus, LucideTrash2, LucideCheck, LucideTerminal, LucideUser, LucideBriefcase, LucideGraduationCap, LucideCpu, LucideFolderGit2, LucideCloudCheck } from 'lucide-react';
+import { LucideUpload, LucidePlus, LucideTrash2, LucideCheck, LucideTerminal, LucideUser, LucideBriefcase, LucideGraduationCap, LucideCpu, LucideFolderGit2, LucideCloudCheck, LucideArrowRight, LucideFileText, LucideEye, LucideX } from 'lucide-react';
 
 interface Experience {
   title: string;
@@ -27,21 +27,26 @@ interface Project {
 
 export default function MasterResumePage() {
   const router = useRouter();
-  
+
   // State for the interactive builder
-  const [contact, setContact] = useState({ name: '', email: '' });
+  const [contact, setContact] = useState({ name: '', email: '', phone: '', github: '', linkedin: '' });
   const [experience, setExperience] = useState<Experience[]>([]);
   const [education, setEducation] = useState<Education[]>([]);
   const [skills, setSkills] = useState<string[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  
+
   // Snapshot for dirty checking
   const [lastSavedHash, setLastSavedHash] = useState('');
-  
+
   const [status, setStatus] = useState<'idle' | 'loading' | 'uploading' | 'saving' | 'error'>('loading');
   const [errorMsg, setErrorMsg] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
-  
+
+  // Uploaded resume viewer state
+  const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [showResumeViewer, setShowResumeViewer] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Compute if there are unsaved changes
@@ -57,14 +62,26 @@ export default function MasterResumePage() {
         const response = await resumeService.getMasterResume('dev-user-123');
         if (response && response.resume_data) {
           const data = response.resume_data;
-          if (data.contact) setContact(data.contact || { name: '', email: '' });
+          if (data.contact) setContact({
+            name: data.contact.name || '',
+            email: data.contact.email || '',
+            phone: data.contact.phone || '',
+            github: data.contact.github || '',
+            linkedin: data.contact.linkedin || '',
+          });
           setExperience(data.experience || []);
           setEducation(data.education || []);
           setSkills(data.skills || []);
           setProjects(data.projects || []);
           // Sync the hash to exactly match the loaded data
           setLastSavedHash(JSON.stringify({
-            contact: data.contact || { name: '', email: '' },
+            contact: {
+              name: data.contact?.name || '',
+              email: data.contact?.email || '',
+              phone: data.contact?.phone || '',
+              github: data.contact?.github || '',
+              linkedin: data.contact?.linkedin || '',
+            },
             experience: data.experience || [],
             education: data.education || [],
             skills: data.skills || [],
@@ -72,7 +89,7 @@ export default function MasterResumePage() {
           }));
         } else {
           // Initialize empty
-          const empty = { contact: { name: '', email: '' }, experience: [], education: [], skills: [], projects: [] };
+          const empty = { contact: { name: '', email: '', phone: '', github: '', linkedin: '' }, experience: [], education: [], skills: [], projects: [] };
           setLastSavedHash(JSON.stringify(empty));
         }
         setStatus('idle');
@@ -98,12 +115,23 @@ export default function MasterResumePage() {
     setStatus('uploading');
     setErrorMsg('');
 
+    // Store reference to the uploaded file for viewing
+    const objectUrl = URL.createObjectURL(file);
+    setUploadedFileUrl(objectUrl);
+    setUploadedFileName(file.name);
+
     try {
       const response = await resumeService.uploadResume('dev-user-123', file);
       if (response && response.resume_data) {
         const data = response.resume_data;
         // REPLACE existing data as per use request 
-        setContact(data.contact || { name: '', email: '' });
+        setContact({
+          name: data.contact?.name || '',
+          email: data.contact?.email || '',
+          phone: data.contact?.phone || '',
+          github: data.contact?.github || '',
+          linkedin: data.contact?.linkedin || '',
+        });
         setExperience(data.experience || []);
         setEducation(data.education || []);
         setSkills(data.skills || []);
@@ -189,7 +217,7 @@ export default function MasterResumePage() {
 
   const handleReset = () => {
     if (window.confirm('WARNING: This will clear all data in the current session. Proceed?')) {
-      setContact({ name: '', email: '' });
+      setContact({ name: '', email: '', phone: '', github: '', linkedin: '' });
       setExperience([]);
       setEducation([]);
       setSkills([]);
@@ -212,7 +240,41 @@ export default function MasterResumePage() {
 
   return (
     <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans pb-32 overflow-x-hidden">
-      
+
+      {/* RESUME VIEWER MODAL */}
+      {showResumeViewer && uploadedFileUrl && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 md:p-8">
+          <div className="relative w-full max-w-4xl h-[85vh] bg-zinc-950 border border-white/10 flex flex-col shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-black/60">
+              <div className="flex items-center gap-3">
+                <LucideFileText className="w-4 h-4 text-cyan-accent" />
+                <span className="text-[10px] uppercase tracking-widest font-heading text-white">
+                  Uploaded Resume
+                </span>
+                <span className="text-[9px] text-white/30 font-mono ml-2 truncate max-w-[200px]">
+                  {uploadedFileName}
+                </span>
+              </div>
+              <button
+                onClick={() => setShowResumeViewer(false)}
+                className="text-white/40 hover:text-white transition-colors p-1"
+              >
+                <LucideX className="w-5 h-5" />
+              </button>
+            </div>
+            {/* PDF Embed */}
+            <div className="flex-grow">
+              <iframe
+                src={uploadedFileUrl}
+                className="w-full h-full border-0"
+                title="Uploaded Resume Preview"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* HEADER BAR */}
       <header className="fixed top-0 left-0 w-full z-50 bg-black/90 backdrop-blur-lg border-b border-white/10 px-4 md:px-8 py-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
@@ -229,19 +291,29 @@ export default function MasterResumePage() {
             </div>
           )}
           {!hasChanges && !saveSuccess && (
-             <div className="hidden sm:flex items-center gap-2 text-[10px] text-white/20 uppercase tracking-widest font-mono">
-                <LucideCheck className="w-3 h-3" />
-                All Synced
-             </div>
+            <div className="hidden sm:flex items-center gap-2 text-[10px] text-white/20 uppercase tracking-widest font-mono">
+              <LucideCheck className="w-3 h-3" />
+              All Synced
+            </div>
           )}
-          <Button 
-            onClick={handleSave} 
+
+          {/* Navigate to Editor Studio */}
+          <Button
+            onClick={() => router.push('/editor/1')}
+            className="bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-cyan-accent/50 uppercase font-heading px-4 md:px-6 h-10 tracking-widest text-[10px] md:text-xs font-bold transition-all flex items-center gap-2 group"
+          >
+            <span className="hidden sm:inline">Editor Studio</span>
+            <span className="sm:hidden">Editor</span>
+            <LucideArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
+          </Button>
+
+          <Button
+            onClick={handleSave}
             disabled={status === 'saving' || status === 'uploading' || !hasChanges}
-            className={`transition-all uppercase font-heading px-4 md:px-8 h-10 tracking-widest text-[10px] md:text-xs font-bold ${
-              hasChanges 
-              ? 'bg-cyan-accent text-black hover:bg-white shadow-[0_0_20px_rgba(0,240,255,0.2)]' 
-              : 'bg-white/5 text-white/20 border-white/5 cursor-not-allowed'
-            }`}
+            className={`transition-all uppercase font-heading px-4 md:px-8 h-10 tracking-widest text-[10px] md:text-xs font-bold ${hasChanges
+                ? 'bg-cyan-accent text-black hover:bg-white shadow-[0_0_20px_rgba(0,240,255,0.2)]'
+                : 'bg-white/5 text-white/20 border-white/5 cursor-not-allowed'
+              }`}
           >
             {status === 'saving' ? 'Saving...' : 'Save Profile'}
           </Button>
@@ -249,23 +321,23 @@ export default function MasterResumePage() {
       </header>
 
       <main className="pt-24 px-4 md:px-8 max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
-        
+
         {/* LEFT COLUMN: UPLOAD & STEPS */}
         <aside className="lg:col-span-4 xl:col-span-3 space-y-6 md:space-y-8">
           <div className="lg:sticky lg:top-24 space-y-6">
             <div className="relative group overflow-hidden border border-white/10 bg-black/60 p-6 md:p-8 backdrop-blur-sm">
               {/* Animation Scan Line */}
               {status === 'uploading' && <div className="absolute top-0 left-0 w-full scan-line animate-scan z-10" />}
-              
+
               <div className="relative z-0">
                 <h3 className="text-[10px] font-heading text-cyan-accent mb-2 tracking-[0.2em] uppercase">Magic Auto-Fill</h3>
                 <p className="text-[10px] text-white/40 mb-6 leading-tight uppercase font-mono">
                   Upload a PDF and our AI will automatically fill in your details for you.
                 </p>
-                
+
                 <input type="file" accept=".pdf" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
-                
-                <button 
+
+                <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={status === 'uploading'}
                   className="w-full h-32 md:h-40 border border-dashed border-white/20 hover:border-cyan-accent/50 hover:bg-cyan-muted flex flex-col items-center justify-center transition-all group"
@@ -282,62 +354,108 @@ export default function MasterResumePage() {
               </div>
             </div>
 
+            {/* View Uploaded Resume Button */}
+            {uploadedFileUrl && (
+              <button
+                onClick={() => setShowResumeViewer(true)}
+                className="w-full flex items-center justify-center gap-3 py-4 px-6 border border-white/10 bg-black/60 hover:bg-white/5 hover:border-cyan-accent/30 transition-all group"
+              >
+                <LucideEye className="w-4 h-4 text-white/30 group-hover:text-cyan-accent transition-colors" />
+                <span className="text-[10px] uppercase font-heading tracking-widest text-white/40 group-hover:text-white transition-colors">
+                  View Uploaded Resume
+                </span>
+              </button>
+            )}
+
             <nav className="border border-white/10 p-6 space-y-3 font-mono bg-black/40">
-               <div className="text-[9px] text-white/30 mb-4 tracking-widest uppercase border-b border-white/10 pb-2">Profile Checklist</div>
-               <div className="flex justify-between items-center text-[10px] py-1">
-                 <span className={`flex items-center gap-2 transition-colors ${contact.name ? 'text-white' : 'text-white/40'}`}>
-                   <LucideUser className={`w-3 h-3 ${contact.name ? 'text-cyan-accent cyan-drop-shadow' : 'text-white/40'}`}/> Personal Info
-                 </span> 
-                 {contact.name ? <LucideCheck className="w-3 h-3 text-cyan-accent cyan-drop-shadow" /> : <div className="w-1 h-1 bg-white/20" />}
-               </div>
-               <div className="flex justify-between items-center text-[10px] py-1">
-                 <span className={`flex items-center gap-2 transition-colors ${experience.length > 0 ? 'text-white' : 'text-white/40'}`}>
-                   <LucideBriefcase className={`w-3 h-3 ${experience.length > 0 ? 'text-cyan-accent cyan-drop-shadow' : 'text-white/40'}`}/> Work History
-                 </span> 
-                 <span className={experience.length > 0 ? "text-cyan-accent cyan-glow font-bold" : "text-white/20"}>{experience.length} Items</span>
-               </div>
-               <div className="flex justify-between items-center text-[10px] py-1">
-                 <span className={`flex items-center gap-2 transition-colors ${education.length > 0 ? 'text-white' : 'text-white/40'}`}>
-                   <LucideGraduationCap className={`w-3 h-3 ${education.length > 0 ? 'text-cyan-accent cyan-drop-shadow' : 'text-white/40'}`}/> Education
-                 </span> 
-                 <span className={education.length > 0 ? "text-cyan-accent cyan-glow font-bold" : "text-white/20"}>{education.length} Items</span>
-               </div>
-               <div className="flex justify-between items-center text-[10px] py-1">
-                 <span className={`flex items-center gap-2 transition-colors ${skills.length > 0 ? 'text-white' : 'text-white/40'}`}>
-                   <LucideCpu className={`w-3 h-3 ${skills.length > 0 ? 'text-cyan-accent cyan-drop-shadow' : 'text-white/40'}`}/> Skills
-                 </span> 
-                 <span className={skills.length > 0 ? "text-cyan-accent cyan-glow font-bold" : "text-white/20"}>{skills.length} Items</span>
-               </div>
+              <div className="text-[9px] text-white/30 mb-4 tracking-widest uppercase border-b border-white/10 pb-2">Profile Checklist</div>
+              <div className="flex justify-between items-center text-[10px] py-1">
+                <span className={`flex items-center gap-2 transition-colors ${contact.name ? 'text-white' : 'text-white/40'}`}>
+                  <LucideUser className={`w-3 h-3 ${contact.name ? 'text-cyan-accent cyan-drop-shadow' : 'text-white/40'}`} /> Personal Info
+                </span>
+                {contact.name ? <LucideCheck className="w-3 h-3 text-cyan-accent cyan-drop-shadow" /> : <div className="w-1 h-1 bg-white/20" />}
+              </div>
+              <div className="flex justify-between items-center text-[10px] py-1">
+                <span className={`flex items-center gap-2 transition-colors ${experience.length > 0 ? 'text-white' : 'text-white/40'}`}>
+                  <LucideBriefcase className={`w-3 h-3 ${experience.length > 0 ? 'text-cyan-accent cyan-drop-shadow' : 'text-white/40'}`} /> Work History
+                </span>
+                <span className={experience.length > 0 ? "text-cyan-accent cyan-glow font-bold" : "text-white/20"}>{experience.length} Items</span>
+              </div>
+              <div className="flex justify-between items-center text-[10px] py-1">
+                <span className={`flex items-center gap-2 transition-colors ${education.length > 0 ? 'text-white' : 'text-white/40'}`}>
+                  <LucideGraduationCap className={`w-3 h-3 ${education.length > 0 ? 'text-cyan-accent cyan-drop-shadow' : 'text-white/40'}`} /> Education
+                </span>
+                <span className={education.length > 0 ? "text-cyan-accent cyan-glow font-bold" : "text-white/20"}>{education.length} Items</span>
+              </div>
+              <div className="flex justify-between items-center text-[10px] py-1">
+                <span className={`flex items-center gap-2 transition-colors ${skills.length > 0 ? 'text-white' : 'text-white/40'}`}>
+                  <LucideCpu className={`w-3 h-3 ${skills.length > 0 ? 'text-cyan-accent cyan-drop-shadow' : 'text-white/40'}`} /> Skills
+                </span>
+                <span className={skills.length > 0 ? "text-cyan-accent cyan-glow font-bold" : "text-white/20"}>{skills.length} Items</span>
+              </div>
+              <div className="flex justify-between items-center text-[10px] py-1 border-t border-white/5 mt-1 pt-1">
+                <span className={`flex items-center gap-2 transition-colors ${projects.length > 0 ? 'text-white' : 'text-white/40'}`}>
+                  <LucideFolderGit2 className={`w-3 h-3 ${projects.length > 0 ? 'text-cyan-accent cyan-drop-shadow' : 'text-white/40'}`} /> Projects
+                </span>
+                <span className={projects.length > 0 ? "text-cyan-accent cyan-glow font-bold" : "text-white/20"}>{projects.length} Items</span>
+              </div>
             </nav>
           </div>
         </aside>
 
         {/* CENTER COLUMN: FORM */}
         <div className="lg:col-span-8 xl:col-span-6 space-y-12 md:space-y-16">
-          
+
           {/* 1. CONTACT */}
           <section id="contact" className="space-y-6">
             <div className="flex items-baseline gap-4">
               <span className="text-3xl md:text-4xl font-heading text-white/10">01</span>
               <h2 className="text-xl md:text-2xl font-heading text-white tracking-widest">Personal Details</h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6 md:p-8 border border-white/10 bg-black/40 backdrop-blur-sm">
-              <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-5 md:p-6 border border-white/10 bg-black/40 backdrop-blur-sm">
+              <div className="space-y-1">
                 <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">Full Name</label>
-                <Input 
-                  value={contact.name} 
-                  onChange={e => setContact({...contact, name: e.target.value})} 
-                  className="bg-transparent border-white/20 text-white font-mono placeholder:text-white/10 focus:border-cyan-accent transition-all uppercase h-10 text-xs md:text-sm"
+                <Input
+                  value={contact.name}
+                  onChange={e => setContact({ ...contact, name: e.target.value })}
+                  className="bg-transparent border-white/20 text-white font-mono placeholder:text-white/10 focus:border-cyan-accent transition-all uppercase h-9 text-xs"
                   placeholder="John Doe"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">Email Address</label>
-                <Input 
-                  value={contact.email} 
-                  onChange={e => setContact({...contact, email: e.target.value})} 
-                  className="bg-transparent border-white/20 text-white font-mono placeholder:text-white/10 focus:border-cyan-accent transition-all h-10 text-xs md:text-sm"
+                <Input
+                  value={contact.email}
+                  onChange={e => setContact({ ...contact, email: e.target.value })}
+                  className="bg-transparent border-white/20 text-white font-mono placeholder:text-white/10 focus:border-cyan-accent transition-all h-9 text-xs"
                   placeholder="john@example.com"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">Phone Number</label>
+                <Input
+                  value={contact.phone}
+                  onChange={e => setContact({ ...contact, phone: e.target.value })}
+                  className="bg-transparent border-white/20 text-white font-mono placeholder:text-white/10 focus:border-cyan-accent transition-all h-9 text-xs"
+                  placeholder="+1 (555) 000-0000"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">LinkedIn</label>
+                <Input
+                  value={contact.linkedin}
+                  onChange={e => setContact({ ...contact, linkedin: e.target.value })}
+                  className="bg-transparent border-white/20 text-white font-mono placeholder:text-white/10 focus:border-cyan-accent transition-all h-9 text-xs"
+                  placeholder="linkedin.com/in/johndoe"
+                />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">GitHub</label>
+                <Input
+                  value={contact.github}
+                  onChange={e => setContact({ ...contact, github: e.target.value })}
+                  className="bg-transparent border-white/20 text-white font-mono placeholder:text-white/10 focus:border-cyan-accent transition-all h-9 text-xs"
+                  placeholder="github.com/johndoe"
                 />
               </div>
             </div>
@@ -354,7 +472,7 @@ export default function MasterResumePage() {
                 <LucidePlus className="w-3 h-3 mr-2" /> Add Job
               </Button>
             </div>
-            
+
             <div className="space-y-6 md:space-y-8">
               {experience.length === 0 && (
                 <div className="p-8 border border-dashed border-white/10 text-center">
@@ -366,7 +484,7 @@ export default function MasterResumePage() {
                   <button onClick={() => removeExperience(expIdx)} className="absolute top-4 right-4 text-white/20 hover:text-red-500 transition-colors p-2">
                     <LucideTrash2 className="w-4 h-4" />
                   </button>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">Job Title</label>
@@ -388,8 +506,8 @@ export default function MasterResumePage() {
                     {exp.bullets.map((bullet, bIdx) => (
                       <div key={bIdx} className="flex gap-4 group/bullet">
                         <div className="w-0.5 min-h-[60px] bg-white/5 group-hover/bullet:bg-cyan-accent transition-colors" />
-                        <Textarea 
-                          value={bullet} 
+                        <Textarea
+                          value={bullet}
                           onChange={e => updateBullet(expIdx, bIdx, e.target.value)}
                           className="bg-transparent border-transparent hover:border-white/10 focus:border-white/20 text-xs text-white/80 font-mono resize-none h-[60px] py-1"
                           placeholder="What did you achieve in this role?"
@@ -416,7 +534,7 @@ export default function MasterResumePage() {
                 <LucidePlus className="w-3 h-3 mr-2" /> Add School
               </Button>
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {education.map((edu, idx) => (
                 <div key={idx} className="border border-white/10 bg-black/40 p-6 space-y-4 relative">
@@ -453,13 +571,13 @@ export default function MasterResumePage() {
                 <LucidePlus className="w-3 h-3 mr-2" /> Add Skill
               </Button>
             </div>
-            
+
             <div className="flex flex-wrap gap-2 p-6 md:p-8 border border-white/10 bg-black/40">
               {skills.map((skill, idx) => (
                 <div key={idx} className="flex items-center group relative">
-                  <Input 
-                    value={skill} 
-                    onChange={e => updateSkill(idx, e.target.value)} 
+                  <Input
+                    value={skill}
+                    onChange={e => updateSkill(idx, e.target.value)}
                     className="w-28 md:w-32 bg-transparent border-white/20 text-[10px] font-mono h-8 uppercase focus:border-cyan-accent px-2"
                     placeholder="New Skill"
                   />
@@ -474,7 +592,7 @@ export default function MasterResumePage() {
 
           {/* 5. PROJECTS */}
           <section id="projects" className="space-y-6">
-             <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
               <div className="flex items-baseline gap-4">
                 <span className="text-3xl md:text-4xl font-heading text-white/10">05</span>
                 <h2 className="text-xl md:text-2xl font-heading text-white tracking-widest uppercase">Favorite Projects</h2>
@@ -524,36 +642,47 @@ export default function MasterResumePage() {
               </div>
             </div>
 
+            {/* Go to Editor CTA */}
+            <button
+              onClick={() => router.push('/editor/1')}
+              className="w-full flex items-center justify-between p-6 border border-cyan-accent/20 bg-cyan-muted hover:bg-cyan-accent/20 hover:border-cyan-accent/40 transition-all group"
+            >
+              <div className="flex flex-col items-start gap-1">
+                <span className="text-[10px] uppercase font-heading tracking-widest text-cyan-accent cyan-glow font-bold">Launch Editor</span>
+                <span className="text-[9px] text-white/30 font-mono">Tailor resume for a specific job</span>
+              </div>
+              <LucideArrowRight className="w-5 h-5 text-cyan-accent transition-transform group-hover:translate-x-1" />
+            </button>
+
             <div className={`border p-6 backdrop-blur-md transition-all duration-500 ${hasChanges ? 'border-amber-500/20 bg-amber-500/5' : 'border-cyan-accent/20 bg-cyan-muted'}`}>
-               <h3 className={`text-[10px] font-heading mb-4 uppercase tracking-widest ${hasChanges ? 'text-amber-500' : 'text-cyan-accent cyan-glow'}`}>
-                 {hasChanges ? 'Unsaved Changes' : 'All Synced'}
-               </h3>
-               <p className={`text-[10px] font-mono leading-loose ${hasChanges ? 'text-amber-500/70' : 'text-cyan-accent/70'}`}>
-                 SYNC: {status === 'saving' ? 'BUSY...' : hasChanges ? 'OUTDATED' : 'STABLE'}<br/>
-                 LAST: {saveSuccess ? 'JUST NOW' : hasChanges ? 'PENDING' : 'SAVED'}<br/>
-                 STATE: {hasChanges ? 'DIRTY' : 'CLEAN'}
-               </p>
+              <h3 className={`text-[10px] font-heading mb-4 uppercase tracking-widest ${hasChanges ? 'text-amber-500' : 'text-cyan-accent cyan-glow'}`}>
+                {hasChanges ? 'Unsaved Changes' : 'All Synced'}
+              </h3>
+              <p className={`text-[10px] font-mono leading-loose ${hasChanges ? 'text-amber-500/70' : 'text-cyan-accent/70'}`}>
+                SYNC: {status === 'saving' ? 'BUSY...' : hasChanges ? 'OUTDATED' : 'STABLE'}<br />
+                LAST: {saveSuccess ? 'JUST NOW' : hasChanges ? 'PENDING' : 'SAVED'}<br />
+                STATE: {hasChanges ? 'DIRTY' : 'CLEAN'}
+              </p>
             </div>
 
-            <Button 
-                onClick={handleSave} 
-                disabled={status === 'saving' || !hasChanges}
-                className={`w-full h-16 transition-all uppercase font-heading tracking-[0.2em] text-xs font-bold shadow-[0_4px_20px_rgba(255,255,255,0.05)] border ${
-                  hasChanges 
-                  ? 'bg-white text-black hover:bg-cyan-accent hover:border-cyan-accent shadow-[0_0_20px_rgba(0,240,255,0.1)]' 
+            <Button
+              onClick={handleSave}
+              disabled={status === 'saving' || !hasChanges}
+              className={`w-full h-16 transition-all uppercase font-heading tracking-[0.2em] text-xs font-bold shadow-[0_4px_20px_rgba(255,255,255,0.05)] border ${hasChanges
+                  ? 'bg-white text-black hover:bg-cyan-accent hover:border-cyan-accent shadow-[0_0_20px_rgba(0,240,255,0.1)]'
                   : 'bg-white/5 text-white/20 border-white/5 cursor-not-allowed'
                 }`}
-              >
-                {hasChanges ? 'Commit Changes' : 'Profile up to date'}
+            >
+              {hasChanges ? 'Commit Changes' : 'Profile up to date'}
             </Button>
 
-            <button 
+            <button
               onClick={handleReset}
               className="w-full text-[10px] text-white/20 hover:text-red-500 uppercase tracking-widest font-mono transition-colors pt-2"
             >
               [ Reset Local Buffer ]
             </button>
-            
+
             {errorMsg && <div className="text-[10px] text-red-500 font-mono uppercase bg-red-500/5 border border-red-500/20 p-4">{errorMsg}</div>}
           </div>
         </aside>
