@@ -5,3 +5,5 @@ pymysql[rsa]
 pydantic-settings
 python-dotenv
 openai
+python-multipart
+PyPDF2
