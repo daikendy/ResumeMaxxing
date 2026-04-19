@@ -35,14 +35,21 @@ async def tailor_resume(raw_resume: dict, job_description: str, job_title: str) 
         }
     
     system_prompt = """
-    You are an expert ATS-Optimization Career Coach. 
-    Your job is to rewrite the user's resume bullet points to perfectly match the provided Job Description.
+    You are an expert ATS-Optimization Career Coach and a high-precision ATS-compliant machine.
+    Your job is to rewrite the user's resume JSON to perfectly align with the provided Target Job Description and Target Job Title.
     
     CRITICAL RULES:
-    1. STRICT TRUTH CONSTRAINT: You MUST NEVER invent fake experience or change the underlying technologies the user knows.
-    If the user used Java, DO NOT change it to Python. You may only reframe the context of how they used their actual skills.
-    2. Use strong action verbs and focus on impact/metrics.
-    3. You MUST return the result as a strict JSON object matching the user's original data structure.
+    1. STRICT TRUTH CONSTRAINT: You MUST NEVER invent fake experience.
+    2. ANTI-HALLUCINATION GUARDRAIL: DO NOT add any technologies (e.g., Python, Docker) if they are not explicitly listed in the User's Master Profile JSON. 
+    3. EXPERIENCE INTEGRITY: Even if a skill (like Python) is in the user's "Skills" list, DO NOT add it to a specific company's "Experience" bullet points unless it was already mentioned in the original description of that specific role. Do not "leak" skills into roles where they weren't used.
+    4. MANDATORY SECTION PRESERVATION: You MUST return a complete JSON object containing EVERY section: 'contact', 'experience', 'education', 'skills', and 'projects'.
+    5. TAILORING LOGIC: 
+       - Experience: Rewrite bullet points for impact using JD keywords. You MUST use markdown bolding (**text**) to highlight key tools, metrics, or achievements (e.g., "**Python**", "**+45% efficiency**").
+       - Projects: Rephrase to align with the role, keeping tool context.
+       - Skills: Curate for relevance, keeping ONLY what the user knows.
+    6. LARGE JOB DESCRIPTIONS: If the JD is very long, prioritize the "Requirements," "Qualifications," and "Responsibilities" sections.
+    7. DATA INTEGRITY: You MUST strictly PRESERVE the following fields if they exist in the user's master profile: 'startDate', 'endDate', 'location', and 'technologies'. Do NOT delete or modify them unless they are empty.
+    8. Return strict JSON that mirrors the user's master profile structure perfectly.
     """
 
     user_prompt = f"""
@@ -64,10 +71,12 @@ async def tailor_resume(raw_resume: dict, job_description: str, job_title: str) 
             ],
             timeout=15.0  # Fails fast instead of hanging forever
         )
-        print("✅ OpenAI request successful!")
+        # Log the raw response for debugging
+        raw_content = response.choices[0].message.content
+        print(f"🤖 AI RAW CONTENT: {raw_content[:500]}...")
         
         # Parse the AI's string response back into a Python dictionary
-        tailored_json = json.loads(response.choices[0].message.content)
+        tailored_json = json.loads(raw_content)
         return tailored_json
         
     except Exception as e:
@@ -83,7 +92,7 @@ async def extract_resume_data(pdf_text: str) -> dict:
     
     if MOCK_MODE:
         return {
-            "contact": {"name": "Mocked PDF Extraction", "email": "mock@test.com"},
+            "contact": {"name": "Mocked PDF Extraction", "email": "mock@test.com", "phone": "+1 555-0000", "github": "github.com/mock", "linkedin": "linkedin.com/in/mock"},
             "experience": [{"title": "Mock PDF Reader", "company": "Mock Inc", "bullets": ["Read a PDF using Mocking."]}]
         }
 
@@ -93,23 +102,29 @@ async def extract_resume_data(pdf_text: str) -> dict:
     
     CRITICAL RULES:
     1. NEVER invent data. Only extract what is present.
-    2. Try your best to isolate Experience blocks into "title", "company", and a list of string "bullets".
-    3. Extract Education: include "school", "degree", and "years".
+    2. Extract Experience: include "title", "company", "location", "startDate", "endDate", "technologies", and a list of "bullets". 
+    3. Extract Education: include "institution", "degree", and "year".
     4. Extract Skills: a flat list of technical and soft skills.
-    5. Extract Projects: include "title" and "description".
+    5. Extract Projects: include "title", "description", "startDate", "endDate", and "technologies".
+    6. CONTACT DETAILS: Extract ALL available contact info:
+       - "phone": The candidate's phone number (any format).
+       - "github": GitHub profile URL or username. May appear as a hyperlink URL (e.g., https://github.com/username). Return just the URL without https:// prefix.
+       - "linkedin": LinkedIn profile URL or username. May appear as a hyperlink URL (e.g., https://linkedin.com/in/username). Return just the URL without https:// prefix.
+       - NOTE: The text may contain a "[HYPERLINKS]" section at the end with URLs extracted from PDF annotations. Cross-reference these with any visible link text in the resume body to identify GitHub and LinkedIn URLs.
+    7. If a field is not found, set it to an empty string "". Do NOT omit it.
     
     Return exactly this JSON format:
     {
-      "contact": { "name": "...", "email": "..." },
+      "contact": { "name": "...", "email": "...", "phone": "...", "github": "...", "linkedin": "..." },
       "experience": [
-         { "title": "...", "company": "...", "bullets": ["...", "..."] }
+         { "title": "...", "company": "...", "location": "...", "startDate": "...", "endDate": "...", "technologies": "...", "bullets": ["..."] }
       ],
       "education": [
-         { "school": "...", "degree": "...", "years": "..." }
+         { "institution": "...", "degree": "...", "year": "..." }
       ],
-      "skills": ["...", "..."],
+      "skills": ["..."],
       "projects": [
-         { "title": "...", "description": "..." }
+         { "title": "...", "description": "...", "startDate": "...", "endDate": "...", "technologies": "..." }
       ]
     }
     """
@@ -129,4 +144,4 @@ async def extract_resume_data(pdf_text: str) -> dict:
         return json.loads(response.choices[0].message.content)
     except Exception as e:
         print(f"❌ OPENAI ERROR (PDF PARSE): {str(e)}")
-        raise Exception(f"Failed to parse PDF using OpenAI: {str(e)}")
+        raise Exception(f"Failed to parse PDF using OpenAI: {str(e)}")

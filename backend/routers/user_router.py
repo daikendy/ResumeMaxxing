@@ -52,6 +52,26 @@ async def upload_resume(user_id: str, file: UploadFile = File(...)):
         text = ""
         for page in pdf_reader.pages:
             text += page.extract_text() + "\n"
+        
+        # Extract hyperlink annotations (GitHub/LinkedIn URLs hidden behind link text)
+        hyperlinks = []
+        for page in pdf_reader.pages:
+            if "/Annots" in page:
+                annotations = page["/Annots"]
+                for annot in annotations:
+                    annot_obj = annot.get_object()
+                    if annot_obj.get("/Subtype") == "/Link":
+                        action = annot_obj.get("/A")
+                        if action and "/URI" in action:
+                            uri = action["/URI"]
+                            if uri not in hyperlinks:
+                                hyperlinks.append(uri)
+        
+        # Append hyperlinks to the text so the AI can identify GitHub/LinkedIn URLs
+        if hyperlinks:
+            text += "\n\n[HYPERLINKS]\n"
+            for link in hyperlinks:
+                text += f"- {link}\n"
             
         if not text.strip():
             raise HTTPException(status_code=400, detail="Could not extract text from PDF.")
