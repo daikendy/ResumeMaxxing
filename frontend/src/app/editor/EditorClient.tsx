@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@clerk/clerk-react';
 import { resumeService } from '@/lib/api/services/resumeService';
 import { ResumeResponse } from '@/lib/api/types/resume';
 import { calculateMatchScore } from '@/lib/utils/keywordMatcher';
+import { AuthGuard } from '@/components/AuthGuard';
 
 import {
   LucideTerminal,
@@ -31,6 +33,7 @@ import Link from 'next/link';
 type EditorState = 'idle' | 'loading' | 'success' | 'error';
 
 export default function EditorClient({ jobId }: { jobId: string }) {
+  const { getToken, isLoaded } = useAuth();
   const [targetJobTitle, setTargetJobTitle] = useState('');
   const [targetJobDescription, setTargetJobDescription] = useState('');
   const [status, setStatus] = useState<EditorState>('idle');
@@ -44,34 +47,35 @@ export default function EditorClient({ jobId }: { jobId: string }) {
 
   // Fetch real master profile on mount
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       try {
-        const response = await resumeService.getMasterResume('dev-user-123');
-        if (response && response.resume_data) {
-          setMasterProfile(response.resume_data);
+        const token = await getToken();
+        if (!token) return;
+
+        // Fetch Profile
+        const profile = await resumeService.getMasterResume(token);
+        if (profile && profile.resume_data) {
+          setMasterProfile(profile.resume_data);
+        }
+
+        // Fetch Job Details
+        if (jobId && jobId !== '1') {
+          const job = await resumeService.getTrackedJob(jobId, token);
+          if (job) {
+            setTargetJobTitle(job.job_title);
+            setTargetJobDescription(job.job_description || '');
+            console.log("📍 JOB DATA SYNCED:", job.job_title);
+          }
         }
       } catch (err) {
-        console.error("Failed to fetch master profile:", err);
+        console.error("Failed to fetch editor data:", err);
       }
     };
 
-    const fetchJobDetails = async () => {
-      if (!jobId || jobId === '1') return; // Skip for default/dummy
-      try {
-        const job = await resumeService.getTrackedJob(jobId);
-        if (job) {
-          setTargetJobTitle(job.job_title);
-          setTargetJobDescription(job.job_description || '');
-          console.log("📍 JOB DATA SYNCED:", job.job_title);
-        }
-      } catch (err) {
-        console.error("Failed to fetch job details:", err);
-      }
-    };
-
-    fetchProfile();
-    fetchJobDetails();
-  }, [jobId]);
+    if (isLoaded) {
+      fetchData();
+    }
+  }, [jobId, isLoaded]);
 
   // Handle Dynamic @page Size for Print
   useEffect(() => {
@@ -105,15 +109,17 @@ export default function EditorClient({ jobId }: { jobId: string }) {
         masterProfileSent: masterProfile || "FALLBACK"
       });
 
+      const token = await getToken();
+      if (!token) throw new Error("No session found");
+
       const response = await resumeService.generateTailoredResume({
         tracked_job_id: parseInt(jobId) || 1,
-        user_id: "dev-user-123",
         raw_resume_data: masterProfile || {
           name: "Unknown User",
           experience: [],
           skills: []
         }
-      });
+      }, token);
 
       console.log("✅ AI RESPONSE RECEIVED:", response.resume_content);
       setResumeData(response);
@@ -136,20 +142,15 @@ export default function EditorClient({ jobId }: { jobId: string }) {
 
 
   return (
-    <div className="print-path flex flex-col md:flex-row h-screen w-full bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans relative overflow-x-hidden">
+    <AuthGuard>
+      <div className="print-path flex flex-col md:flex-row h-[calc(100vh-64px)] w-full bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans relative overflow-x-hidden">
       {/* LEFT COLUMN: The Design Studio Controls */}
       {!isSidebarHidden && (
         <div className="print:hidden w-full md:w-[40%] lg:w-[32%] xl:w-[28%] h-full bg-zinc-950 text-zinc-50 flex flex-col pt-6 pb-8 px-6 md:px-10 overflow-y-auto border-r border-zinc-900 shadow-2xl relative z-20">
 
         {/* Navigation & Header */}
         <div className="flex flex-col gap-6 mb-10">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-zinc-500 hover:text-cyan-accent transition-colors group"
-          >
-            <LucideChevronLeft className="w-3 h-3 transition-transform group-hover:-translate-x-1" />
-            Back to Dashboard
-          </Link>
+          {/* Navbar placeholder padding removed - Navbar is global now */}
 
           <div>
             <div className="flex items-center gap-3 mb-2">
@@ -174,7 +175,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
                 <LucideDatabase className="w-3 h-3 text-cyan-accent" />
                 <span className="text-[10px] uppercase tracking-widest font-bold text-zinc-400">Master Data</span>
               </div>
-              <span className="text-[9px] font-mono text-zinc-600">Active User: dev-user-123</span>
+              <span className="text-[9px] font-mono text-zinc-600">Identity: Clerk Verified</span>
             </div>
 
             {!masterProfile ? (
@@ -336,7 +337,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
         {/* Toggle Sidebar Button (Persistent) */}
         <button 
           onClick={() => setIsSidebarHidden(!isSidebarHidden)}
-          className="no-print absolute top-8 left-8 z-50 p-3 bg-zinc-900/90 backdrop-blur-md border border-zinc-800 text-zinc-400 hover:text-white rounded-sm flex items-center gap-3 transition-all duration-300 hover:bg-zinc-800 group shadow-xl active:scale-95"
+          className="no-print absolute top-12 left-8 z-50 p-3 bg-zinc-900/90 backdrop-blur-md border border-zinc-800 text-zinc-400 hover:text-white rounded-sm flex items-center gap-3 transition-all duration-300 hover:bg-zinc-800 group shadow-xl active:scale-95"
           title={isSidebarHidden ? "Open Design Studio" : "Full Focus View"}
         >
           <LucideTerminal className={`w-4 h-4 ${isSidebarHidden ? 'text-zinc-500' : 'text-cyan-accent'} group-hover:scale-110 transition-transform duration-300`} />
@@ -612,6 +613,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
         </div>
       </div>
     </div>
+    </AuthGuard>
   );
 }
 

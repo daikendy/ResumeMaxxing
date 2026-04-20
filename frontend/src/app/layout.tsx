@@ -1,40 +1,35 @@
-import type { Metadata } from "next";
-import { Space_Grotesk, IBM_Plex_Mono, Inter } from "next/font/google";
+'use client';
+
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
-  subsets: ["latin"],
-});
+import { ClerkProvider } from "@clerk/clerk-react";
+import Navbar from "@/components/Navbar";
 
-const mono = IBM_Plex_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-
-const inter = Inter({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "Resumemaxxing | Master Profile",
-  description: "AI Technical Resume Architecture",
-};
+const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  if (!PUBLISHABLE_KEY) {
+    console.warn("Missing Clerk Publishable Key");
+  }
+
   return (
-    <html
-      lang="en"
-      className={`${spaceGrotesk.variable} ${mono.variable} ${inter.variable} h-full antialiased dark`}
-      suppressHydrationWarning
-    >
-      <body className="min-h-full flex flex-col font-sans bg-black text-white">{children}</body>
-    </html>
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY!}>
+      <html
+        lang="en"
+        className="h-full antialiased dark"
+        suppressHydrationWarning
+      >
+        <body className="min-h-full flex flex-col font-sans bg-black text-white">
+          <Navbar />
+          <main className="flex-grow pt-16">
+            {children}
+          </main>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

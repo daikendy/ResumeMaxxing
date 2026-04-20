@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@clerk/clerk-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { resumeService } from '@/lib/api/services/resumeService';
+import { AuthGuard } from '@/components/AuthGuard';
 import { LucideUpload, LucidePlus, LucideTrash2, LucideCheck, LucideTerminal, LucideUser, LucideBriefcase, LucideGraduationCap, LucideCpu, LucideFolderGit2, LucideCloudCheck, LucideArrowRight, LucideFileText, LucideEye, LucideX, LucideAlertTriangle, LucideLayoutDashboard } from 'lucide-react';
 import {
   AlertDialog,
@@ -48,6 +50,7 @@ interface Project {
 
 export default function MasterResumePage() {
   const router = useRouter();
+  const { getToken, isLoaded } = useAuth();
 
   // State for the interactive builder
   const [contact, setContact] = useState({ name: '', email: '', phone: '', github: '', linkedin: '' });
@@ -81,7 +84,10 @@ export default function MasterResumePage() {
   useEffect(() => {
     const fetchMasterResume = async () => {
       try {
-        const response = await resumeService.getMasterResume('dev-user-123');
+        const token = await getToken();
+        if (!token) return;
+        
+        const response = await resumeService.getMasterResume(token);
         if (response && response.resume_data) {
           const data = response.resume_data;
           setContact({
@@ -125,17 +131,14 @@ export default function MasterResumePage() {
         }
         setStatus('idle');
       } catch (error: any) {
-        if (error.response && error.response.status === 404) {
-          setLastSavedHash(JSON.stringify({ contact, experience, education, skills, projects }));
-          setStatus('idle');
-        } else {
-          console.error(error);
-          setStatus('idle');
-        }
+        console.error("Master Resume Error:", error);
+        setStatus('idle');
       }
     };
-    fetchMasterResume();
-  }, []);
+    if (isLoaded) {
+      fetchMasterResume();
+    }
+  }, [isLoaded]);
 
   // --- ACTIONS ---
 
@@ -152,7 +155,10 @@ export default function MasterResumePage() {
     setUploadedFileName(file.name);
 
     try {
-      const response = await resumeService.uploadResume('dev-user-123', file);
+      const token = await getToken();
+      if (!token) throw new Error("No session found");
+
+      const response = await resumeService.uploadResume(file, token);
       if (response && response.resume_data) {
         const data = response.resume_data;
         // REPLACE existing data as per use request 
@@ -172,7 +178,7 @@ export default function MasterResumePage() {
       setStatus('idle');
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.response?.data?.detail || 'Whoops! We couldn\'t read that PDF. Please try another one.');
+      setErrorMsg(err.message || 'Whoops! We couldn\'t read that PDF. Please try another one.');
       setStatus('idle');
     }
   };
@@ -197,14 +203,17 @@ export default function MasterResumePage() {
     const parsedJson = { contact, summary, experience, education, skills, projects };
 
     try {
-      await resumeService.saveMasterResume('dev-user-123', parsedJson);
+      const token = await getToken();
+      if (!token) throw new Error("No session found");
+
+      await resumeService.saveMasterResume(parsedJson, token);
       setLastSavedHash(JSON.stringify(parsedJson));
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
       setStatus('idle');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      setErrorMsg('Cloud Sync Failed: Check your connection.');
+      setErrorMsg(error.message || 'Cloud Sync Failed: Check your connection.');
       setStatus('error');
     }
   };
@@ -272,7 +281,8 @@ export default function MasterResumePage() {
   }
 
   return (
-    <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans pb-32 overflow-x-hidden">
+    <AuthGuard>
+      <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans pb-32 overflow-x-hidden">
 
       {/* RESUME VIEWER MODAL */}
       {showResumeViewer && uploadedFileUrl && (
@@ -308,51 +318,9 @@ export default function MasterResumePage() {
         </div>
       )}
 
-      {/* HEADER BAR */}
-      <header className="fixed top-0 left-0 w-full z-50 bg-black/90 backdrop-blur-lg border-b border-white/10 px-4 md:px-8 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-cyan-accent flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.4)]">
-            <LucideTerminal className="w-5 h-5 text-black" />
-          </div>
-          <h1 className="text-sm md:text-lg font-heading text-white tracking-widest uppercase cyan-glow">Master Profile</h1>
-        </div>
-        <div className="flex items-center gap-3 md:gap-6">
-          {saveSuccess && (
-            <div className="hidden sm:flex items-center gap-2 text-[10px] text-cyan-accent animate-pulse uppercase tracking-widest">
-              <LucideCloudCheck className="w-3 h-3" />
-              Changes Saved
-            </div>
-          )}
-          {!hasChanges && !saveSuccess && (
-            <div className="hidden sm:flex items-center gap-2 text-[10px] text-white/20 uppercase tracking-widest font-mono">
-              <LucideCheck className="w-3 h-3" />
-              All Synced
-            </div>
-          )}
+      {/* LOCAL HEADER REMOVED - Using Global Navbar from layout.tsx */}
 
-          {/* Navigate to Dashboard */}
-          <Button
-            onClick={() => router.push('/dashboard')}
-            className="bg-white/5 hover:bg-white/10 text-white border border-white/10 uppercase font-heading px-3 md:px-4 h-10 tracking-widest text-[9px] md:text-[10px] font-bold transition-all flex items-center gap-2"
-          >
-            <LucideLayoutDashboard className="w-3.5 h-3.5 text-white/40" />
-            <span className="hidden sm:inline">Console</span>
-          </Button>
-
-          <Button
-            onClick={handleSave}
-            disabled={status === 'saving' || status === 'uploading' || !hasChanges}
-            className={`transition-all uppercase font-heading px-4 md:px-8 h-10 tracking-widest text-[10px] md:text-xs font-bold ${hasChanges
-              ? 'bg-cyan-accent text-black hover:bg-white shadow-[0_0_20px_rgba(0,240,255,0.2)]'
-              : 'bg-white/5 text-white/20 border-white/5 cursor-not-allowed'
-              }`}
-          >
-            {status === 'saving' ? 'Saving...' : 'Save Profile'}
-          </Button>
-        </div>
-      </header>
-
-      <main className="pt-24 px-4 md:px-8 max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
+      <main className="pt-8 px-4 md:px-8 max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
 
         {/* LEFT COLUMN: UPLOAD & STEPS */}
         <aside className="lg:col-span-4 xl:col-span-3 space-y-6 md:space-y-8">
@@ -751,7 +719,7 @@ export default function MasterResumePage() {
 
             {/* Go to Editor CTA */}
             <button
-              onClick={() => router.push('/editor/1')}
+              onClick={() => router.push('/editor?jobId=1')}
               className="w-full flex items-center justify-between p-6 border border-cyan-accent/20 bg-cyan-muted hover:bg-cyan-accent/20 hover:border-cyan-accent/40 transition-all group"
             >
               <div className="flex flex-col items-start gap-1">
@@ -816,5 +784,6 @@ export default function MasterResumePage() {
 
       </main>
     </div>
+    </AuthGuard>
   );
 }

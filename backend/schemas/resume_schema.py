@@ -4,7 +4,6 @@ from datetime import datetime
 
 class ResumeCreate(BaseModel):
     tracked_job_id: int
-    user_id: str
     # The frontend will pass the raw resume text/JSON here
     raw_resume_data: Dict[str, Any] 
 

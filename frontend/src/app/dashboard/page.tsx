@@ -2,35 +2,39 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@clerk/clerk-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { resumeService } from '@/lib/api/services/resumeService';
-import { 
-  LucidePlus, 
-  LucideTerminal, 
-  LucideBriefcase, 
-  LucideLayoutDashboard, 
-  LucideArrowRight, 
-  LucideUserCircle2, 
+import { AuthGuard } from '@/components/AuthGuard';
+import {
+  LucidePlus,
+  LucideTerminal,
+  LucideBriefcase,
+  LucideArrowRight,
+  LucideLayoutDashboard,
+  LucidePlusCircle,
   LucideSearch,
-  LucideTrash2,
+  LucideFileText,
+  LucideX,
   LucideAlertCircle,
-  LucideX
+  LucideTrash2
 } from 'lucide-react';
 
 interface TrackedJob {
   id: number;
-  company_name: string;
   job_title: string;
+  company_name: string;
   job_description: string;
-  created_at: string;
   status: string;
+  created_at: string;
 }
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { getToken, isLoaded } = useAuth();
   const [jobs, setJobs] = useState<TrackedJob[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,16 +49,22 @@ export default function DashboardPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchJobs();
-  }, []);
+    if (isLoaded) {
+      fetchJobs();
+    }
+  }, [isLoaded]);
 
   const fetchJobs = async () => {
     try {
       setIsLoading(true);
-      const data = await resumeService.getTrackedJobs('dev-user-123');
+      const token = await getToken();
+      if (!token) return;
+      
+      const data = await resumeService.getTrackedJobs(token);
       setJobs(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch jobs:", err);
+      setError(err.message || "Failed to sync tracks.");
     } finally {
       setIsLoading(false);
     }
@@ -68,53 +78,25 @@ export default function DashboardPage() {
     setError(null);
 
     try {
-      const response = await resumeService.createTrackedJob({
-        user_id: 'dev-user-123',
-        ...newJob
-      });
+      const token = await getToken();
+      if (!token) throw new Error("No session found");
+
+      const response = await resumeService.createTrackedJob(newJob, token);
       
       // Successfully created - redirect to editor
-      router.push(`/editor/${response.id}`);
+      router.push(`/editor?jobId=${response.id}`);
     } catch (err: any) {
-      if (err.response?.status === 403) {
-        setError("FREE TIER LIMIT: You've reached the maximum of 3 tracked jobs. Please upgrade to Pro for unlimited tracks.");
-      } else {
-        setError("System glitch. Please try again in a moment.");
-      }
+      setError(err.message || "System glitch. Please try again in a moment.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans pb-20">
+    <AuthGuard>
+      <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans pb-20">
       
-      {/* HEADER */}
-      <header className="fixed top-0 left-0 w-full z-40 bg-black/90 backdrop-blur-lg border-b border-white/10 px-6 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-cyan-accent flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.4)]">
-            <LucideTerminal className="w-5 h-5 text-black" />
-          </div>
-          <h1 className="text-xl font-heading text-white tracking-widest uppercase cyan-glow">Command Console</h1>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <Button 
-            onClick={() => router.push('/master-resume')}
-            className="bg-white/5 hover:bg-white/10 text-white border border-white/10 uppercase text-[10px] tracking-widest font-bold h-10 px-4 md:px-6 gap-2"
-          >
-            <LucideUserCircle2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Master Profile</span>
-          </Button>
-          <Button 
-            onClick={() => setIsModalOpen(true)}
-            className="bg-cyan-accent text-black hover:bg-white uppercase text-[10px] tracking-widest font-bold h-10 px-4 md:px-6 shadow-[0_0_15px_rgba(0,240,255,0.3)] gap-2"
-          >
-            <LucidePlus className="w-4 h-4" />
-            <span className="hidden sm:inline">New Track</span>
-          </Button>
-        </div>
-      </header>
+      {/* LOCAL HEADER REMOVED - Using Global Navbar from layout.tsx */}
 
       {/* MODAL / OVERLAY FORM */}
       {isModalOpen && (
@@ -188,7 +170,7 @@ export default function DashboardPage() {
       )}
 
       {/* MAIN CONTENT */}
-      <main className="pt-32 px-6 md:px-12 max-w-[1400px] mx-auto">
+      <main className="pt-12 px-6 md:px-12 max-w-[1400px] mx-auto">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div className="space-y-2">
             <h2 className="text-3xl md:text-5xl font-heading text-white tracking-tighter uppercase leading-none">
@@ -326,5 +308,6 @@ export default function DashboardPage() {
         </div>
       </footer>
     </div>
+    </AuthGuard>
   );
 }
