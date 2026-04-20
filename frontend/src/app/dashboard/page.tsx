@@ -40,6 +40,9 @@ export default function DashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Profile Status
+  const [profileStatus, setProfileStatus] = useState<'COMPLETE' | 'INITIALIZING' | 'EMPTY'>('INITIALIZING');
+
   // New Job Form State
   const [newJob, setNewJob] = useState({
     job_title: '',
@@ -51,20 +54,41 @@ export default function DashboardPage() {
   useEffect(() => {
     if (isLoaded) {
       fetchJobs();
+      fetchProfileStatus();
     }
   }, [isLoaded]);
+
+  const fetchProfileStatus = async () => {
+    try {
+      const token = await getToken();
+      if (!token) return;
+      const response = await resumeService.getMasterResume(token);
+      if (response && response.resume_data && response.resume_data.experience?.length > 0) {
+        setProfileStatus('COMPLETE');
+      } else {
+        setProfileStatus('EMPTY');
+      }
+    } catch (e) {
+      setProfileStatus('EMPTY');
+    }
+  };
 
   const fetchJobs = async () => {
     try {
       setIsLoading(true);
       const token = await getToken();
-      if (!token) return;
+      
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
       
       const data = await resumeService.getTrackedJobs(token);
-      setJobs(data);
+      setJobs(data || []);
+      setError(null);
     } catch (err: any) {
       console.error("Failed to fetch jobs:", err);
-      setError(err.message || "Failed to sync tracks.");
+      setError(err.message || "Unable to sync with master control. Check your connection.");
     } finally {
       setIsLoading(false);
     }
@@ -82,8 +106,6 @@ export default function DashboardPage() {
       if (!token) throw new Error("No session found");
 
       const response = await resumeService.createTrackedJob(newJob, token);
-      
-      // Successfully created - redirect to editor
       router.push(`/editor?jobId=${response.id}`);
     } catch (err: any) {
       setError(err.message || "System glitch. Please try again in a moment.");
@@ -92,12 +114,22 @@ export default function DashboardPage() {
     }
   };
 
+  const handleDeleteJob = async (id: number) => {
+    if (!confirm("Are you sure you want to terminate this track?")) return;
+    try {
+      const token = await getToken();
+      if (!token) return;
+      await resumeService.deleteTrackedJob(id, token);
+      setJobs(jobs.filter(j => j.id !== id));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   return (
     <AuthGuard>
       <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans pb-20">
       
-      {/* LOCAL HEADER REMOVED - Using Global Navbar from layout.tsx */}
-
       {/* MODAL / OVERLAY FORM */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
@@ -170,24 +202,42 @@ export default function DashboardPage() {
       )}
 
       {/* MAIN CONTENT */}
-      <main className="pt-12 px-6 md:px-12 max-w-[1400px] mx-auto">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div className="space-y-2">
-            <h2 className="text-3xl md:text-5xl font-heading text-white tracking-tighter uppercase leading-none">
-              Tracked <span className="text-cyan-accent cyan-glow">Opportunities</span>
-            </h2>
+      <main className="pt-12 px-6 md:px-12 max-w-[1400px] mx-auto pb-40">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-12">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <h2 className="text-3xl md:text-5xl font-heading text-white tracking-tighter uppercase leading-none">
+                Tracked <span className="text-cyan-accent cyan-glow">Opportunities</span>
+              </h2>
+              <div className="hidden md:flex px-3 py-1 bg-white/5 border border-white/10 rounded-full items-center gap-2">
+                <div className={`w-1.5 h-1.5 rounded-full ${profileStatus === 'COMPLETE' ? 'bg-cyan-accent cyan-glow animate-pulse' : 'bg-white/20'}`} />
+                <span className="text-[9px] font-mono text-white/40 uppercase tracking-widest">
+                  PROFILE_STATUS: {profileStatus}
+                </span>
+              </div>
+            </div>
             <p className="text-[10px] md:text-xs font-mono text-white/30 uppercase tracking-[0.2em]">
               Manage and tailor your applications strategically.
             </p>
           </div>
 
-          <div className="flex items-center gap-4 border-b border-white/10 pb-2 flex-grow max-w-sm md:ml-auto">
-            <LucideSearch className="w-4 h-4 text-white/20" />
-            <input 
-              type="text" 
-              placeholder="SEARCH_TRACKS..." 
-              className="bg-transparent border-none text-xs font-mono text-white placeholder:text-white/10 w-full focus:outline-none uppercase tracking-widest" 
-            />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6 lg:ml-auto">
+            <div className="flex items-center gap-4 border-b border-white/10 pb-2 flex-grow min-w-[200px] md:min-w-[300px]">
+              <LucideSearch className="w-4 h-4 text-white/20" />
+              <input 
+                type="text" 
+                placeholder="SEARCH_TRACKS..." 
+                className="bg-transparent border-none text-xs font-mono text-white placeholder:text-white/10 w-full focus:outline-none uppercase tracking-widest" 
+              />
+            </div>
+            
+            <Button 
+              onClick={() => setIsModalOpen(true)}
+              className="bg-cyan-accent text-black hover:bg-white h-12 px-8 uppercase font-heading font-bold tracking-widest text-[10px] transition-all shadow-[0_0_20px_rgba(0,240,255,0.1)]"
+            >
+              <LucidePlusCircle className="w-4 h-4 mr-2" />
+              New Track +
+            </Button>
           </div>
         </div>
 
@@ -195,7 +245,7 @@ export default function DashboardPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-64 bg-white/5 animate-pulse border border-white/10" />
+              <div key={i} className="h-72 bg-white/5 animate-pulse border border-white/10" />
             ))}
           </div>
         ) : jobs.length === 0 ? (
@@ -203,7 +253,7 @@ export default function DashboardPage() {
           <div className="flex flex-col items-center justify-center py-40 border border-dashed border-white/10 bg-black/40">
             <LucideBriefcase className="w-12 h-12 text-white/10 mb-6" />
             <h3 className="text-xl font-heading text-white/40 uppercase tracking-[0.2em] mb-2">No active tracks</h3>
-            <p className="text-[10px] font-mono text-white/20 uppercase tracking-widest mb-8 text-center max-w-sm px-6">
+            <p className="text-[10px] font-mono text-white/20 uppercase tracking-widest mb-8 text-center max-w-sm px-6 leading-relaxed">
               Initialize your first job tracking sequence to start tailoring your resume.
             </p>
             <Button 
@@ -217,7 +267,7 @@ export default function DashboardPage() {
           /* JOB GRID */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {jobs.map((job) => (
-              <Card key={job.id} className="bg-black/60 border-white/10 hover:border-cyan-accent/30 transition-all group overflow-hidden relative">
+              <Card key={job.id} className="bg-black/60 border-white/10 hover:border-cyan-accent/30 transition-all group overflow-hidden relative flex flex-col h-full min-h-[320px]">
                 <div className="absolute top-0 left-0 w-1 h-full bg-cyan-accent/0 group-hover:bg-cyan-accent transition-all" />
                 
                 <CardHeader className="pb-4">
@@ -237,14 +287,13 @@ export default function DashboardPage() {
                   </CardDescription>
                 </CardHeader>
                 
-                <CardContent className="h-24 overflow-hidden relative">
-                  <p className="text-[10px] text-white/30 font-mono line-clamp-4 leading-relaxed">
+                <CardContent className="flex-grow overflow-y-auto custom-scrollbar relative pr-2 max-h-32 mb-4">
+                  <p className="text-[10px] text-white/30 font-mono leading-relaxed whitespace-pre-wrap">
                     {job.job_description}
                   </p>
-                  <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-black/80 to-transparent" />
                 </CardContent>
 
-                <CardFooter className="pt-4 border-t border-white/5 flex gap-2">
+                <CardFooter className="pt-4 border-t border-white/5 flex gap-2 mt-auto">
                   <Button 
                     onClick={() => router.push(`/editor?jobId=${job.id}`)}
                     className="flex-grow bg-white/5 hover:bg-cyan-accent hover:text-black text-white text-[10px] font-heading font-bold tracking-widest transition-all h-10 gap-2"
@@ -254,7 +303,8 @@ export default function DashboardPage() {
                   </Button>
                   <Button 
                     variant="ghost" 
-                    className="w-10 h-10 p-0 hover:bg-red-500/10 hover:text-red-500 text-white/20 border border-white/10"
+                    onClick={() => handleDeleteJob(job.id)}
+                    className="w-10 h-10 p-0 hover:bg-red-500/10 hover:text-red-500 text-white/20 border border-white/10 transition-colors"
                   >
                     <LucideTrash2 className="w-4 h-4" />
                   </Button>
@@ -266,7 +316,7 @@ export default function DashboardPage() {
             {jobs.length < 3 && (
               <button 
                 onClick={() => setIsModalOpen(true)}
-                className="h-full min-h-[250px] border border-dashed border-white/10 hover:border-cyan-accent/40 bg-white/[0.02] hover:bg-cyan-muted transition-all flex flex-col items-center justify-center group"
+                className="h-full min-h-[320px] border border-dashed border-white/10 hover:border-cyan-accent/40 bg-white/[0.02] hover:bg-cyan-muted transition-all flex flex-col items-center justify-center group"
               >
                 <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center mb-4 group-hover:border-cyan-accent group-hover:bg-cyan-accent/10 transition-all">
                   <LucidePlus className="w-5 h-5 text-white/20 group-hover:text-cyan-accent" />
@@ -277,7 +327,7 @@ export default function DashboardPage() {
             
             {/* TIER LIMIT CARD */}
             {jobs.length >= 3 && (
-              <div className="h-full min-h-[250px] border border-white/10 bg-zinc-950/50 p-8 flex flex-col items-center justify-center text-center">
+              <div className="h-full min-h-[320px] border border-white/10 bg-zinc-950/50 p-8 flex flex-col items-center justify-center text-center">
                 <div className="p-3 bg-white/5 mb-4">
                   <LucideTerminal className="w-6 h-6 text-white/20" />
                 </div>

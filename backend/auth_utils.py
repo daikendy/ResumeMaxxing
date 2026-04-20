@@ -27,15 +27,37 @@ def get_jwks():
         _jwks_cache = response.json()
     return _jwks_cache
 
-async def get_current_user(token: HTTPAuthorizationCredentials = Depends(security)) -> str:
+from sqlalchemy.orm import Session
+from models.user_model import User
+
+def sync_user_to_db(user_data: dict, db: Session):
     """
-    Dependency to verify the Clerk JWT and return the user's Clerk ID (sub claim).
+    Ensures a user exists in the local database (Lazy Sync).
+    """
+    user_id = user_data["id"]
+    email = user_data.get("email") or f"{user_id}@clerk.user"
+    
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if not db_user:
+        print(f"Syncing new user to DB: {user_id}")
+        db_user = User(
+            id=user_id,
+            email=email,
+            subscription_tier='free'
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+    return db_user
+
+async def get_current_user(token: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+    """
+    Dependency to verify the Clerk JWT and return the user's details.
     """
     try:
         jwks = get_jwks()
         unverified_header = jwt.get_unverified_header(token.credentials)
         
-        # Find the correct key in JWKS
         rsa_key = {}
         for key in jwks["keys"]:
             if key["kid"] == unverified_header["kid"]:
@@ -51,7 +73,6 @@ async def get_current_user(token: HTTPAuthorizationCredentials = Depends(securit
         if not rsa_key:
             raise HTTPException(status_code=401, detail="Invalid authentication header: Key not found")
 
-        # Decode and verify the token
         payload = jwt.decode(
             token.credentials,
             rsa_key,
@@ -60,10 +81,12 @@ async def get_current_user(token: HTTPAuthorizationCredentials = Depends(securit
         )
         
         user_id = payload.get("sub")
+        email = payload.get("email") # Clerk can include this in JWT if configured
+        
         if not user_id:
             raise HTTPException(status_code=401, detail="Token missing identity (sub)")
             
-        return user_id
+        return {"id": user_id, "email": email}
 
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")

@@ -107,15 +107,26 @@
   border-left: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-::-webkit-scrollbar-thumb {
-  background: #1A1A1A;
-  border: 2px solid #000000;
-  transition: all 0.3s ease;
-}
-
 ::-webkit-scrollbar-thumb:hover {
   background: #00F0FF;
   box-shadow: 0 0 15px #00F0FF;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 240, 255, 0.1);
+  border: none;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #00F0FF;
 }
 
 /* Final Scrollbar for Firefox */

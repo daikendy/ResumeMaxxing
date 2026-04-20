@@ -8,30 +8,32 @@ from models.user_model import User
 from schemas.master_resume_schema import MasterResumeCreate, MasterResumeResponse
 from services.ai_service import extract_resume_data
 
-from auth_utils import get_current_user
+from auth_utils import get_current_user, sync_user_to_db
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
-@router.get("/master-resume", response_model=MasterResumeResponse)
-def get_master_resume(current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Fetch the master resume for the authenticated user."""
-    db_resume = db.query(MasterResume).filter(MasterResume.user_id == current_user).first()
-    if not db_resume:
-        raise HTTPException(status_code=404, detail="Master resume not found")
+@router.get("/master-resume", response_model=MasterResumeResponse | None)
+def get_master_resume(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Fetch the master resume for the authenticated user, syncing the user record first."""
+    sync_user_to_db(current_user, db)
+    db_resume = db.query(MasterResume).filter(MasterResume.user_id == current_user["id"]).first()
     return db_resume
 
 @router.post("/master-resume", response_model=MasterResumeResponse)
-def save_master_resume(payload: MasterResumeCreate, current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Save or update the master resume for the authenticated user."""
+def save_master_resume(payload: MasterResumeCreate, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Save or update the master resume, ensuring the user record is synced."""
+    sync_user_to_db(current_user, db)
+    user_id = current_user["id"]
+    
     # Check if exists
-    db_resume = db.query(MasterResume).filter(MasterResume.user_id == current_user).first()
+    db_resume = db.query(MasterResume).filter(MasterResume.user_id == user_id).first()
 
     if db_resume:
         # Update existing
         db_resume.resume_data = payload.resume_data
     else:
         # Create new
-        db_resume = MasterResume(user_id=current_user, resume_data=payload.resume_data)
+        db_resume = MasterResume(user_id=user_id, resume_data=payload.resume_data)
         db.add(db_resume)
 
     db.commit()
@@ -39,8 +41,9 @@ def save_master_resume(payload: MasterResumeCreate, current_user: str = Depends(
     return db_resume
 
 @router.post("/upload-resume")
-async def upload_resume(current_user: str = Depends(get_current_user), file: UploadFile = File(...)):
-    """Extract data from a PDF resume for the authenticated user."""
+async def upload_resume(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db), file: UploadFile = File(...)):
+    """Extract data from a PDF, ensuring the user record is synced."""
+    sync_user_to_db(current_user, db)
     if not file.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
         

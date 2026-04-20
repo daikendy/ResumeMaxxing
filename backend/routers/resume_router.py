@@ -7,22 +7,15 @@ from models.resume_model import ResumeVersion
 from models.job_model import TrackedJob
 from services.ai_service import tailor_resume
 
-from auth_utils import get_current_user
+from auth_utils import get_current_user, sync_user_to_db
 
 router = APIRouter(prefix="/resumes", tags=["Resumes"])
 
 @router.post("/generate", response_model=ResumeResponse)
-async def generate_tailored_resume(payload: ResumeCreate, current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
+async def generate_tailored_resume(payload: ResumeCreate, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     
-    # 1. Fetch or Create User (JIT Registration)
-    user = db.query(User).filter(User.id == current_user).first()
-    if not user:
-        # Create a new user record for this Clerk ID
-        user = User(id=current_user, generations_limit=5)
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-        print(f"🆕 JIT REGISTRATION: Created user record for {current_user}")
+    # 1. Ensure User is synced
+    user = sync_user_to_db(current_user, db)
         
     if user.generations_used >= user.generations_limit:
         raise HTTPException(status_code=403, detail="Quota exceeded. Upgrade to Premium.")
