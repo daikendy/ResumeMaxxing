@@ -339,16 +339,6 @@ export default function MasterResumePage() {
             <span className="hidden sm:inline">Console</span>
           </Button>
 
-          {/* Navigate to Editor Studio */}
-          <Button
-            onClick={() => router.push('/editor/1')}
-            className="bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-cyan-accent/50 uppercase font-heading px-4 md:px-6 h-10 tracking-widest text-[10px] md:text-xs font-bold transition-all flex items-center gap-2 group"
-          >
-            <span className="hidden sm:inline">Editor Studio</span>
-            <span className="sm:hidden">Editor</span>
-            <LucideArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
-          </Button>
-
           <Button
             onClick={handleSave}
             disabled={status === 'saving' || status === 'uploading' || !hasChanges}
