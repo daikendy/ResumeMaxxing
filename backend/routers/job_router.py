@@ -12,6 +12,14 @@ def get_user_jobs(user_id: str, db: Session = Depends(get_db)):
     """Fetch all tracked jobs for a specific user."""
     return db.query(TrackedJob).filter(TrackedJob.user_id == user_id).order_by(TrackedJob.created_at.desc()).all()
 
+@router.get("/track/{job_id}", response_model=JobResponse)
+def get_job_by_id(job_id: int, db: Session = Depends(get_db)):
+    """Fetch a single tracked job by its ID."""
+    job = db.query(TrackedJob).filter(TrackedJob.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job track not found")
+    return job
+
 @router.post("/", response_model=JobResponse)
 def create_job(payload: JobCreate, db: Session = Depends(get_db)):
     """Create a new tracked job with a 3-job limit check."""
