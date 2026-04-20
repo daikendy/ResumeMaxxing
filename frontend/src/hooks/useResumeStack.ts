@@ -1,94 +1,92 @@
 import { useState, useCallback } from 'react';
 
 /**
- * useResumeStack Hook
- * Strict two-stack data structure (Past/Future) for robust Undo/Redo state management.
- * Designed for managing JSON objects representing the user's resume content.
+ * VERSION-CENTRIC HISTORY ENGINE
+ * Specialized for ResumeMaxxing to switch between complete AI generations.
+ * Replaces generic undo/redo with a linear "Version Timeline".
  */
-export function useResumeStack<T>(initialState: T | null) {
-  const [past, setPast] = useState<T[]>([]);
-  const [present, setPresent] = useState<T | null>(initialState);
-  const [future, setFuture] = useState<T[]>([]);
+export function useResumeStack<T extends { id?: number; version_number?: number }>(initialState: T | null) {
+  const [history, setHistory] = useState<T[]>(initialState ? [initialState] : []);
+  const [currentIndex, setCurrentIndex] = useState(initialState ? 0 : -1);
 
   /**
-   * Set a new state.
-   * Pushes current present to past, updates present, and clears future.
+   * Set a new Version. 
+   * Only adds to history if it's a NEW version (determined by version_number).
    */
-  const set = useCallback((newState: T) => {
-    setPresent(currentPresent => {
-      if (currentPresent !== null) {
-        setPast(prev => [...prev, currentPresent]);
+  const set = useCallback((newData: T) => {
+    setHistory(prev => {
+      // 1. Check if this version already exists in the history
+      const existingIndex = prev.findIndex(item => item.version_number === newData.version_number);
+      
+      if (existingIndex !== -1) {
+        // Version exists, just move the pointer to it (no duplicates)
+        setCurrentIndex(existingIndex);
+        return prev;
       }
-      return newState;
+
+      // 2. It's a brand new version. 
+      // We clear any "future" history (if user was in the past and generated something new)
+      const newHistory = prev.slice(0, currentIndex + 1);
+      const updated = [...newHistory, newData];
+      setCurrentIndex(updated.length - 1);
+      return updated;
     });
-    setFuture([]);
-  }, []);
+  }, [currentIndex]);
 
   /**
-   * Undo last action.
-   * If past is not empty, pop last item. Push current present to future.
+   * Undo: Jump to the previous unique version
    */
   const undo = useCallback(() => {
-    if (past.length === 0) return;
-
-    setPast(prevPast => {
-      const newPast = [...prevPast];
-      const previous = newPast.pop();
-      
-      if (previous !== undefined) {
-        setPresent(currentPresent => {
-          if (currentPresent !== null) {
-            setFuture(prevFuture => [currentPresent, ...prevFuture]);
-          }
-          return previous;
-        });
-      }
-      return newPast;
-    });
-  }, [past.length]);
+    if (currentIndex > 0) {
+      setCurrentIndex(prev => prev - 1);
+    }
+  }, [currentIndex]);
 
   /**
-   * Redo last undone action.
-   * If future is not empty, pop first item. Push current present to past.
+   * Redo: Jump to the next unique version
    */
   const redo = useCallback(() => {
-    if (future.length === 0) return;
-
-    setFuture(prevFuture => {
-      const newFuture = [...prevFuture];
-      const next = newFuture.shift();
-      
-      if (next !== undefined) {
-        setPresent(currentPresent => {
-          if (currentPresent !== null) {
-            setPast(prevPast => [...prevPast, currentPresent]);
-          }
-          return next;
-        });
-      }
-      return newFuture;
-    });
-  }, [future.length]);
+    if (currentIndex < history.length - 1) {
+      setCurrentIndex(prev => prev + 1);
+    }
+  }, [currentIndex]);
 
   /**
-   * Initialize or replace the entire state without pushing to history.
-   * Useful for initial loads or reset hooks.
+   * Hard Reset (on initial load)
    */
-  const initialize = useCallback((state: T) => {
-    setPresent(state);
-    setPast([]);
-    setFuture([]);
+  const initialize = useCallback((data: T) => {
+    setHistory([data]);
+    setCurrentIndex(0);
   }, []);
 
+  /**
+   * Bulk Load History (for persistence across page reloads)
+   */
+  const initializeWithHistory = useCallback((items: T[]) => {
+    setHistory(items);
+    setCurrentIndex(items.length - 1); // Default to most recent
+  }, []);
+
+  /**
+   * Programmatic Navigation (jump to specific version index)
+   */
+  const jumpTo = useCallback((index: number) => {
+    if (index >= 0 && index < history.length) {
+      setCurrentIndex(index);
+    }
+  }, [history.length]);
+
   return {
-    present,
+    present: history[currentIndex] || null,
     set,
     undo,
     redo,
     initialize,
-    canUndo: past.length > 0,
-    canRedo: future.length > 0,
-    past,
-    future
+    initializeWithHistory,
+    jumpTo,
+    canUndo: currentIndex > 0,
+    canRedo: currentIndex < history.length - 1,
+    totalDepth: history.length,
+    currentIndex: currentIndex + 1
   };
 }

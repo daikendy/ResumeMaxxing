@@ -41,8 +41,8 @@ export default function EditorClient({ jobId }: { jobId: string }) {
   const [targetJobDescription, setTargetJobDescription] = useState('');
   const [status, setStatus] = useState<EditorState>('idle');
   
-  // History Engine
-  const stack = useResumeStack<ResumeResponse>(null);
+  // [Fresh Start] Simplified Version Engine
+  const stack = useResumeStack<any>(null);
   const resumeData = stack.present;
 
   const [matchScore, setMatchScore] = useState<number | null>(null);
@@ -78,25 +78,31 @@ export default function EditorClient({ jobId }: { jobId: string }) {
             setTargetJobDescription(job.job_description || '');
             console.log("📍 JOB DATA SYNCED:", job.job_title);
 
-            // [Persistence Engine] Restore previous generation if it exists
+            // [Persistence Engine] Restore Full Version Timeline
             if (job.resume_versions && job.resume_versions.length > 0) {
-              // Find the active version or fallback to the most recent one
-              const activeVersion = job.resume_versions.find((v: any) => v.is_active) || job.resume_versions[0];
+              // Sort by ID to ensure chronological order
+              const sortedVersions = [...job.resume_versions].sort((a: any, b: any) => a.id - b.id);
               
-              if (activeVersion && activeVersion.resume_content) {
-                stack.initialize(activeVersion);
-                
-                // Recalculate scores for current view consistency
-                if (profile && profile.resume_data) {
-                  const baseScore = calculateMatchScore(job.job_description, profile.resume_data);
-                  const optimizedScore = calculateMatchScore(job.job_description, activeVersion.resume_content);
-                  setOriginalScore(baseScore);
-                  setMatchScore(optimizedScore);
-                }
-                
-                setStatus('success'); // Force render the resume
-                console.log("♻️ STATE RESTORED: Version", activeVersion.version_number);
+              // Load all versions into the Timeline
+              stack.initializeWithHistory(sortedVersions);
+              
+              // Find the index of the active version to set the pointer correctly
+              const activeIndex = sortedVersions.findIndex((v: any) => v.is_active);
+              if (activeIndex !== -1) {
+                 stack.jumpTo(activeIndex);
               }
+
+              // Recalculate scores for the initial view
+              const currentVersion = sortedVersions[activeIndex !== -1 ? activeIndex : sortedVersions.length - 1];
+              if (currentVersion && profile?.resume_data) {
+                const baseScore = calculateMatchScore(job.job_description, profile.resume_data);
+                const optimizedScore = calculateMatchScore(job.job_description, currentVersion.resume_content);
+                setOriginalScore(baseScore);
+                setMatchScore(optimizedScore);
+              }
+              
+              setStatus('success');
+              console.log(`♻️ TIMELINE RESTORED: ${sortedVersions.length} versions recovered.`);
             }
           }
         }
@@ -189,17 +195,21 @@ export default function EditorClient({ jobId }: { jobId: string }) {
   // Handle Manual Edits to the JSON content
   const handleUpdateContent = useCallback((newContent: any) => {
     if (!resumeData) return;
-    stack.set({
-      ...resumeData,
-      resume_content: newContent
-    });
-    
-    // Recalculate scores for the new manual content
-    if (masterProfile) {
-      const optimizedScore = calculateMatchScore(targetJobDescription, newContent);
-      setMatchScore(optimizedScore);
-    }
   }, [resumeData, stack, targetJobDescription, masterProfile]);
+
+  // [Reactive Analysis] Sync match score whenever the active version changes
+  useEffect(() => {
+    if (resumeData?.resume_content && targetJobDescription) {
+      const optimizedScore = calculateMatchScore(targetJobDescription, resumeData.resume_content);
+      setMatchScore(optimizedScore);
+      
+      // Also ensure original score is set if profile exists
+      if (masterProfile) {
+        const baseScore = calculateMatchScore(targetJobDescription, masterProfile);
+        setOriginalScore(baseScore);
+      }
+    }
+  }, [resumeData, targetJobDescription, masterProfile]);
 
   // Keyboard Shortcuts for Undo/Redo
   useEffect(() => {
@@ -431,39 +441,47 @@ export default function EditorClient({ jobId }: { jobId: string }) {
                 <button
                   onClick={stack.undo}
                   disabled={!stack.canUndo}
-                  className={`p-2 transition-all rounded-sm ${stack.canUndo ? 'text-cyan-accent hover:bg-zinc-800 hover:text-white' : 'text-zinc-700 cursor-not-allowed opacity-20'}`}
-                  title="Undo (Ctrl+Z)"
+                  className={`p-3 transition-all rounded-sm ${stack.canUndo ? 'text-cyan-accent hover:bg-zinc-800' : 'text-zinc-700 cursor-not-allowed opacity-10'}`}
+                  title="Previous Version"
                 >
-                  <LucideUndo2 className="w-3.5 h-3.5" />
+                  <LucideUndo2 className="w-4 h-4" />
                 </button>
+                <div className="px-6 border-x border-zinc-800 flex flex-col items-center justify-center min-w-[140px]">
+                   <span className="text-[12px] font-black text-white uppercase tracking-[0.2em]">
+                     Version {resumeData.version_number || stack.currentIndex}
+                   </span>
+                   <span className="text-[8px] font-mono text-zinc-500 tracking-tighter uppercase mt-0.5">
+                     Generation {stack.currentIndex} of {stack.totalDepth}
+                   </span>
+                </div>
                 <button
                   onClick={stack.redo}
                   disabled={!stack.canRedo}
-                  className={`p-2 transition-all rounded-sm ${stack.canRedo ? 'text-cyan-accent hover:bg-zinc-800 hover:text-white' : 'text-zinc-700 cursor-not-allowed opacity-20'}`}
-                  title="Redo (Ctrl+Y)"
+                  className={`p-3 transition-all rounded-sm ${stack.canRedo ? 'text-cyan-accent hover:bg-zinc-800' : 'text-zinc-700 cursor-not-allowed opacity-10'}`}
+                  title="Next Version"
                 >
-                  <LucideRedo2 className="w-3.5 h-3.5" />
+                  <LucideRedo2 className="w-4 h-4" />
                 </button>
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
              {status === 'success' && resumeData && (
-               <div className="hidden lg:flex items-center gap-2 text-[9px] font-mono text-zinc-500 uppercase tracking-widest border-r border-zinc-800 pr-4">
-                 <span className="opacity-30">Stack:</span>
-                 <span className={stack.past.length > 0 ? "text-cyan-accent" : ""}>{stack.past.length}</span>
-                 <span className="opacity-30">/</span>
-                 <span className={stack.future.length > 0 ? "text-cyan-accent" : ""}>{stack.future.length}</span>
-               </div>
+                <div className="flex items-center gap-2 pr-4 border-r border-zinc-800">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-500 whitespace-nowrap">
+                    Active for Export
+                  </span>
+                </div>
              )}
 
              {status === 'success' && resumeData && (
               <Button
-                className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-none h-10 px-6 text-[10px] uppercase tracking-[0.2em] font-bold transition-all shadow-[0_0_20px_rgba(16,185,129,0.1)] flex items-center gap-2 group border-none"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-none h-11 px-8 text-[11px] uppercase tracking-[0.2em] font-black transition-all shadow-[0_0_300x_rgba(16,185,129,0.15)] flex items-center gap-3 group border-none"
                 onClick={() => window.print()}
               >
-                <LucideDownload className="w-3.5 h-3.5 group-hover:translate-y-0.5 transition-transform" />
+                <LucideDownload className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
                 Export PDF
               </Button>
              )}
@@ -596,13 +614,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
                 {/* 1. Header & Contact */}
                 <div className="text-center space-y-0.5">
                   <h1 
-                    contentEditable
-                    suppressContentEditableWarning
-                    onBlur={(e) => {
-                      const newContent = { ...resumeData.resume_content, contact: { ...resumeData.resume_content.contact, name: e.currentTarget.innerText } };
-                      handleUpdateContent(newContent);
-                    }}
-                    className="text-2xl font-bold tracking-tight text-zinc-900 border-b-2 border-zinc-900 inline-block px-3 pb-1 outline-none hover:bg-zinc-50 transition-colors focus:bg-zinc-50 focus:border-cyan-accent" 
+                    className="text-2xl font-bold tracking-tight text-zinc-900 border-b-2 border-zinc-900 inline-block px-3 pb-1" 
                     style={{ fontFamily: "'Georgia', serif" }}
                   >
                     {resumeData.resume_content.contact?.name || "Candidate Name"}
@@ -627,13 +639,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
                 {resumeData.resume_content.summary && (
                   <div className="pt-2">
                     <p 
-                      contentEditable
-                      suppressContentEditableWarning
-                      onBlur={(e) => {
-                        const newContent = { ...resumeData.resume_content, summary: e.currentTarget.innerText };
-                        handleUpdateContent(newContent);
-                      }}
-                      className="text-[11px] leading-relaxed text-zinc-700 text-center mx-auto max-w-[90%] outline-none hover:bg-zinc-50 transition-colors focus:bg-zinc-50 rounded-sm p-1"
+                      className="text-[11px] leading-relaxed text-zinc-700 text-center mx-auto max-w-[90%] p-1"
                     >
                       {resumeData.resume_content.summary}
                     </p>
@@ -668,17 +674,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
                           {exp.bullets?.map((b: string, bi: number) => (
                             <li 
                               key={bi} 
-                              contentEditable
-                              suppressContentEditableWarning
-                              onBlur={(e) => {
-                                const newBullets = [...exp.bullets];
-                                newBullets[bi] = e.currentTarget.innerText;
-                                const newExperience = [...resumeData.resume_content.experience];
-                                newExperience[i] = { ...exp, bullets: newBullets };
-                                const newContent = { ...resumeData.resume_content, experience: newExperience };
-                                handleUpdateContent(newContent);
-                              }}
-                              className="text-[11px] leading-snug text-zinc-700 pl-1 outline-none hover:bg-zinc-50 transition-colors focus:bg-zinc-50 rounded-sm"
+                               className="text-[11px] leading-snug text-zinc-700 pl-1"
                             >
                               {formatBullet(b)}
                             </li>
