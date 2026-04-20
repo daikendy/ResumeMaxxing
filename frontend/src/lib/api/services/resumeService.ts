@@ -18,8 +18,8 @@ export const resumeService = {
     return response.data;
   },
 
-  getMasterResume: async (token: string): Promise<MasterResumeResponse> => {
-    const response = await api.get<MasterResumeResponse>('/users/master-resume', authHeaders(token));
+  getMasterResume: async (token: string): Promise<MasterResumeResponse | null> => {
+    const response = await api.get<MasterResumeResponse | null>('/users/master-resume', authHeaders(token));
     return response.data;
   },
 
@@ -54,5 +54,9 @@ export const resumeService = {
   createTrackedJob: async (data: { company_name: string; job_title: string; job_description: string }, token: string): Promise<any> => {
     const response = await api.post<any>('/jobs/', data, authHeaders(token));
     return response.data;
+  },
+
+  deleteTrackedJob: async (jobId: number, token: string): Promise<void> => {
+    await api.delete(`/jobs/${jobId}`, authHeaders(token));
   }
 };

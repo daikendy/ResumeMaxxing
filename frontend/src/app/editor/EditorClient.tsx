@@ -41,6 +41,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
   const [matchScore, setMatchScore] = useState<number | null>(null);
   const [originalScore, setOriginalScore] = useState<number | null>(null);
   const [masterProfile, setMasterProfile] = useState<any | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [showAllSkills, setShowAllSkills] = useState(false);
   const [isSidebarHidden, setIsSidebarHidden] = useState(false);
   const [pageSize, setPageSize] = useState<'A4' | 'LETTER'>('A4');
@@ -56,6 +57,8 @@ export default function EditorClient({ jobId }: { jobId: string }) {
         const profile = await resumeService.getMasterResume(token);
         if (profile && profile.resume_data) {
           setMasterProfile(profile.resume_data);
+        } else {
+          setMasterProfile(null);
         }
 
         // Fetch Job Details
@@ -65,10 +68,33 @@ export default function EditorClient({ jobId }: { jobId: string }) {
             setTargetJobTitle(job.job_title);
             setTargetJobDescription(job.job_description || '');
             console.log("📍 JOB DATA SYNCED:", job.job_title);
+
+            // [Persistence Engine] Restore previous generation if it exists
+            if (job.resume_versions && job.resume_versions.length > 0) {
+              // Find the active version or fallback to the most recent one
+              const activeVersion = job.resume_versions.find((v: any) => v.is_active) || job.resume_versions[0];
+              
+              if (activeVersion && activeVersion.resume_content) {
+                setResumeData(activeVersion);
+                
+                // Recalculate scores for current view consistency
+                if (profile && profile.resume_data) {
+                  const baseScore = calculateMatchScore(job.job_description, profile.resume_data);
+                  const optimizedScore = calculateMatchScore(job.job_description, activeVersion.resume_content);
+                  setOriginalScore(baseScore);
+                  setMatchScore(optimizedScore);
+                }
+                
+                setStatus('success'); // Force render the resume
+                console.log("♻️ STATE RESTORED: Version", activeVersion.version_number);
+              }
+            }
           }
         }
       } catch (err) {
         console.error("Failed to fetch editor data:", err);
+      } finally {
+        setIsProfileLoading(false);
       }
     };
 
@@ -178,10 +204,21 @@ export default function EditorClient({ jobId }: { jobId: string }) {
               <span className="text-[9px] font-mono text-zinc-600">Identity: Clerk Verified</span>
             </div>
 
-            {!masterProfile ? (
+            {isProfileLoading ? (
               <div className="flex items-center gap-3 py-2 text-zinc-600 animate-pulse">
                 <LucideCircleDashed className="w-4 h-4 animate-spin" />
                 <span className="text-[10px] uppercase tracking-tighter">Syncing Profile...</span>
+              </div>
+            ) : !masterProfile || !masterProfile.experience?.length ? (
+              <div className="py-4 px-3 bg-red-500/5 border border-red-500/10 space-y-3">
+                <p className="text-[9px] text-red-400 uppercase leading-snug font-mono italic">
+                  [ CRITICAL ] : Master profile is empty. You must populate your career data before the AI can tailor your experience.
+                </p>
+                <Link href="/master-resume" className="block">
+                  <Button variant="outline" className="w-full h-8 border-red-500/20 text-red-500 text-[9px] uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all">
+                    Complete Profile
+                  </Button>
+                </Link>
               </div>
             ) : (
               <div className="space-y-3">
@@ -298,7 +335,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
           <Button
             className="w-full bg-zinc-50 hover:bg-white text-zinc-950 rounded-sm h-14 text-xs uppercase tracking-[0.2em] font-bold transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.05)] flex items-center justify-center gap-2 group"
             onClick={handleGenerate}
-            disabled={status === 'loading' || !targetJobTitle || !targetJobDescription}
+            disabled={status === 'loading' || isProfileLoading || !masterProfile?.experience?.length || !targetJobTitle || !targetJobDescription}
           >
             {status === 'loading' ? (
               <>
@@ -307,8 +344,8 @@ export default function EditorClient({ jobId }: { jobId: string }) {
               </>
             ) : (
               <>
-                <LucideZap className="w-4 h-4 transition-transform group-hover:scale-125" />
-                Execute Generation
+                <LucideZap className={`w-4 h-4 transition-transform ${(!masterProfile?.experience?.length || !targetJobTitle || !targetJobDescription) ? 'opacity-20' : 'group-hover:scale-125'}`} />
+                {(!masterProfile?.experience?.length) ? 'PROFILE REQUIRED' : 'Execute Generation'}
               </>
             )}
           </Button>

@@ -1,6 +1,7 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
+from .resume_schema import ResumeResponse
 
 class JobCreate(BaseModel):
     company_name: str
@@ -15,6 +16,7 @@ class JobResponse(BaseModel):
     job_description: Optional[str] = None
     status: Optional[str] = "bookmarked"
     created_at: datetime
+    resume_versions: List[ResumeResponse] = []
 
     class Config:
         from_attributes = True
