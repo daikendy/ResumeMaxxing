@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { resumeService } from '@/lib/api/services/resumeService';
-import { LucideUpload, LucidePlus, LucideTrash2, LucideCheck, LucideTerminal, LucideUser, LucideBriefcase, LucideGraduationCap, LucideCpu, LucideFolderGit2, LucideCloudCheck, LucideArrowRight, LucideFileText, LucideEye, LucideX, LucideAlertTriangle } from 'lucide-react';
+import { LucideUpload, LucidePlus, LucideTrash2, LucideCheck, LucideTerminal, LucideUser, LucideBriefcase, LucideGraduationCap, LucideCpu, LucideFolderGit2, LucideCloudCheck, LucideArrowRight, LucideFileText, LucideEye, LucideX, LucideAlertTriangle, LucideLayoutDashboard } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -329,6 +329,15 @@ export default function MasterResumePage() {
               All Synced
             </div>
           )}
+
+          {/* Navigate to Dashboard */}
+          <Button
+            onClick={() => router.push('/dashboard')}
+            className="bg-white/5 hover:bg-white/10 text-white border border-white/10 uppercase font-heading px-3 md:px-4 h-10 tracking-widest text-[9px] md:text-[10px] font-bold transition-all flex items-center gap-2"
+          >
+            <LucideLayoutDashboard className="w-3.5 h-3.5 text-white/40" />
+            <span className="hidden sm:inline">Console</span>
+          </Button>
 
           {/* Navigate to Editor Studio */}
           <Button

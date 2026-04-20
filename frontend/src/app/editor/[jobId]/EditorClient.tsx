@@ -120,7 +120,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
 
 
   return (
-    <div className="print-path flex flex-col md:flex-row h-screen w-full bg-[#f4f4f5] overflow-hidden font-sans relative overflow-x-hidden">
+    <div className="print-path flex flex-col md:flex-row h-screen w-full bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans relative overflow-x-hidden">
       {/* LEFT COLUMN: The Design Studio Controls */}
       {!isSidebarHidden && (
         <div className="print:hidden w-full md:w-[40%] lg:w-[32%] xl:w-[28%] h-full bg-zinc-950 text-zinc-50 flex flex-col pt-6 pb-8 px-6 md:px-10 overflow-y-auto border-r border-zinc-900 shadow-2xl relative z-20">
@@ -128,11 +128,11 @@ export default function EditorClient({ jobId }: { jobId: string }) {
         {/* Navigation & Header */}
         <div className="flex flex-col gap-6 mb-10">
           <Link
-            href="/master-resume"
-            className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-zinc-500 hover:text-zinc-100 transition-colors group"
+            href="/dashboard"
+            className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-zinc-500 hover:text-cyan-accent transition-colors group"
           >
             <LucideChevronLeft className="w-3 h-3 transition-transform group-hover:-translate-x-1" />
-            Back to Profile
+            Back to Dashboard
           </Link>
 
           <div>
