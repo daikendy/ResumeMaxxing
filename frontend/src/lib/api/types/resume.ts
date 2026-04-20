@@ -12,6 +12,7 @@ export interface Project {
   title: string;
   description: string;
   technologies?: string;
+  location?: string;
   startDate?: string;
   endDate?: string;
 }
@@ -24,13 +25,16 @@ export interface ResumeContent {
     github?: string;
     linkedin?: string;
   };
+  summary?: string;
   experience: Experience[];
   projects: Project[];
   skills: string[];
   education: Array<{
-    degree: string;
     institution: string;
+    degree: string;
     year: string;
+    location?: string;
+    gpa?: string;
   }>;
 }
 

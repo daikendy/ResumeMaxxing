@@ -39,6 +39,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
   const [originalScore, setOriginalScore] = useState<number | null>(null);
   const [masterProfile, setMasterProfile] = useState<any | null>(null);
   const [showAllSkills, setShowAllSkills] = useState(false);
+  const [isSidebarHidden, setIsSidebarHidden] = useState(false);
 
   // Fetch real master profile on mount
   useEffect(() => {
@@ -84,11 +85,12 @@ export default function EditorClient({ jobId }: { jobId: string }) {
       // Calculate Before vs After
       const baseScore = calculateMatchScore(targetJobDescription, masterProfile);
       const optimizedScore = calculateMatchScore(targetJobDescription, response.resume_content);
-      
+
       setOriginalScore(baseScore);
       setMatchScore(optimizedScore);
 
       setStatus('success');
+      setIsSidebarHidden(true); // Auto-hide sidebar on success
     } catch (error) {
       console.error(error);
       setStatus('error');
@@ -98,10 +100,10 @@ export default function EditorClient({ jobId }: { jobId: string }) {
 
 
   return (
-    <div className="flex flex-col md:flex-row h-screen w-full bg-[#f4f4f5] overflow-hidden font-sans">
-
+    <div className="print-path flex flex-col md:flex-row h-screen w-full bg-[#f4f4f5] overflow-hidden font-sans relative">
       {/* LEFT COLUMN: The Design Studio Controls */}
-      <div className="no-print w-full md:w-[40%] lg:w-[32%] xl:w-[28%] h-full bg-zinc-950 text-zinc-50 flex flex-col pt-6 pb-8 px-6 md:px-10 overflow-y-auto border-r border-zinc-900 shadow-2xl relative z-20">
+      {!isSidebarHidden && (
+        <div className="print:hidden w-full md:w-[40%] lg:w-[32%] xl:w-[28%] h-full bg-zinc-950 text-zinc-50 flex flex-col pt-6 pb-8 px-6 md:px-10 overflow-y-auto border-r border-zinc-900 shadow-2xl relative z-20">
 
         {/* Navigation & Header */}
         <div className="flex flex-col gap-6 mb-10">
@@ -257,7 +259,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
           {/* Print / Save as PDF Button */}
           {status === 'success' && resumeData && (
             <Button
-              className="no-print w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-sm h-12 text-xs uppercase tracking-[0.2em] font-bold transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.15)] flex items-center justify-center gap-2 group"
+              className="print:hidden no-print w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-sm h-12 text-xs uppercase tracking-[0.2em] font-bold transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.15)] flex items-center justify-center gap-2 group"
               onClick={() => window.print()}
             >
               <LucideDownload className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />
@@ -270,9 +272,22 @@ export default function EditorClient({ jobId }: { jobId: string }) {
           )}
         </div>
       </div>
+      )}
 
       {/* RIGHT COLUMN: The Design Canvas */}
-      <div className="w-full md:w-[60%] lg:w-[68%] xl:w-[72%] h-full bg-[#111111] p-4 sm:p-6 md:p-10 lg:p-16 xl:p-24 overflow-y-auto flex flex-col items-center custom-scrollbar relative">
+      <div className={`print-path print:p-0 flex-grow h-full bg-[#111111] print:bg-white p-4 sm:p-6 md:p-10 lg:p-16 xl:p-24 overflow-y-auto flex flex-col items-center custom-scrollbar relative ${isSidebarHidden ? 'w-full' : 'w-auto'}`}>
+        
+        {/* Toggle Sidebar Button (Persistent) */}
+        <button 
+          onClick={() => setIsSidebarHidden(!isSidebarHidden)}
+          className="no-print absolute top-8 left-8 z-50 p-3 bg-zinc-900/90 backdrop-blur-md border border-zinc-800 text-zinc-400 hover:text-white rounded-sm flex items-center gap-3 transition-all duration-300 hover:bg-zinc-800 group shadow-xl active:scale-95"
+          title={isSidebarHidden ? "Open Design Studio" : "Full Focus View"}
+        >
+          <LucideTerminal className={`w-4 h-4 ${isSidebarHidden ? 'text-zinc-500' : 'text-cyan-accent'} group-hover:scale-110 transition-transform duration-300`} />
+          {isSidebarHidden && (
+            <span className="text-[10px] uppercase tracking-[0.2em] font-bold animate-in fade-in slide-in-from-left-2 duration-300">Open Design Studio</span>
+          )}
+        </button>
 
         {/* Subtle Canvas Pattern Overlay */}
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -282,25 +297,25 @@ export default function EditorClient({ jobId }: { jobId: string }) {
         {/* HUD: OUTSIDE the A4 paper, on dark background */}
         {/* ============================================= */}
         {(status === 'success' && resumeData) && matchScore !== null && originalScore !== null && (
-          <div className="no-print w-full max-w-[850px] mb-6 p-5 bg-white/5 border border-white/10 backdrop-blur-sm relative z-10 animate-in fade-in duration-700">
+          <div className="no-print print:hidden w-full max-w-[850px] mb-6 p-5 bg-white/5 border border-white/10 backdrop-blur-sm relative z-10 animate-in fade-in duration-700">
             <div className="flex justify-between items-end mb-4">
               <div className="space-y-4">
                 <div>
                   <h4 className="text-[9px] uppercase tracking-[0.3em] font-bold text-zinc-400 mb-1 font-sans">Document Alignment Analysis</h4>
                   <p className="text-[10px] text-zinc-500 font-sans italic opacity-70">Smarter technical weighted matching v2.0</p>
                 </div>
-                
+
                 <div className="flex gap-4 items-center">
-                   <div className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-sm">
-                      <div className="text-[8px] uppercase tracking-widest text-zinc-500 mb-0.5">Master Profile</div>
-                      <div className="text-sm font-mono text-zinc-400">{originalScore}%</div>
-                   </div>
-                   <div className="w-4 h-[1px] bg-zinc-800" />
-                   <div className="px-3 py-1.5 bg-zinc-900 border border-zinc-700 rounded-sm relative overflow-hidden group">
-                      <div className="absolute inset-0 bg-teal-500/5 group-hover:bg-teal-500/10 transition-colors" />
-                      <div className="text-[8px] uppercase tracking-widest text-teal-500/80 mb-0.5 relative z-10">Tailored Match</div>
-                      <div className="text-sm font-mono text-teal-400 relative z-10">{matchScore}%</div>
-                   </div>
+                  <div className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-sm">
+                    <div className="text-[8px] uppercase tracking-widest text-zinc-500 mb-0.5">Master Profile</div>
+                    <div className="text-sm font-mono text-zinc-400">{originalScore}%</div>
+                  </div>
+                  <div className="w-4 h-[1px] bg-zinc-800" />
+                  <div className="px-3 py-1.5 bg-zinc-900 border border-zinc-700 rounded-sm relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-teal-500/5 group-hover:bg-teal-500/10 transition-colors" />
+                    <div className="text-[8px] uppercase tracking-widest text-teal-500/80 mb-0.5 relative z-10">Tailored Match</div>
+                    <div className="text-sm font-mono text-teal-400 relative z-10">{matchScore}%</div>
+                  </div>
                 </div>
               </div>
 
@@ -321,7 +336,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
                 <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-sans font-bold mt-1">Accuracy Score</span>
               </div>
             </div>
-            
+
             <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all duration-[1500ms] ease-out ${matchScore >= 80 ? 'bg-teal-500 shadow-[0_0_15px_rgba(20,184,166,0.3)]' :
@@ -347,7 +362,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
         )}
 
         {/* A4 PAPER CONTAINER: Clean resume data ONLY */}
-        <div className="w-full max-w-[850px] min-h-[1100px] bg-white shadow-[0_30px_90px_rgba(0,0,0,0.15)] rounded-sm border border-zinc-300 px-8 md:px-12 py-8 md:py-12 relative transition-all duration-700 flex flex-col">
+        <div id="printable-resume-mount" className="print:shadow-none print:border-none print:m-0 print:p-0 a4-paper w-full max-w-[850px] min-h-[1100px] print:min-h-0 bg-white shadow-[0_30px_90px_rgba(0,0,0,0.15)] rounded-sm border border-zinc-300 px-8 md:px-12 py-8 md:py-12 relative transition-all duration-700 flex flex-col">
 
           {/* Aesthetic Paper Texture Overlay */}
           <div className="absolute inset-0 opacity-[0.02] pointer-events-none mix-blend-multiply rounded-sm"
@@ -412,6 +427,15 @@ export default function EditorClient({ jobId }: { jobId: string }) {
                   </div>
                 </div>
 
+                {/* 1.5 Professional Summary */}
+                {resumeData.resume_content.summary && (
+                  <div className="pt-2">
+                    <p className="text-[11px] leading-relaxed text-zinc-700 text-center mx-auto max-w-[90%]">
+                      {resumeData.resume_content.summary}
+                    </p>
+                  </div>
+                )}
+
                 {/* 2. Professional Experience */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
@@ -428,12 +452,12 @@ export default function EditorClient({ jobId }: { jobId: string }) {
                           </span>
                         </div>
                         <div className="flex justify-between items-center text-[10px] uppercase tracking-wider font-bold text-zinc-500 font-sans">
-                           <div className="italic">{exp.company}</div>
-                           {exp.location && <div className="text-[8px] font-normal tracking-widest text-zinc-400">{exp.location}</div>}
+                          <div className="italic">{exp.company}</div>
+                          {exp.location && <div className="text-[9px] font-normal tracking-widest text-zinc-400">{exp.location}</div>}
                         </div>
                         {exp.technologies && (
                           <div className="text-[9px] text-zinc-500 italic leading-tight font-sans mt-0.5 opacity-80">
-                             {exp.technologies}
+                            {exp.technologies}
                           </div>
                         )}
                         <ul className="list-disc pl-4 space-y-0.5 marker:text-zinc-300 mt-1">
@@ -462,12 +486,15 @@ export default function EditorClient({ jobId }: { jobId: string }) {
                               {proj.startDate ? `${proj.startDate} ${proj.endDate ? `— ${proj.endDate}` : ''}` : ''}
                             </span>
                           </div>
-                          {proj.technologies && (
-                            <div className="text-[9px] text-zinc-500 italic leading-tight font-sans opacity-80 mb-0.5">
-                               {proj.technologies}
-                            </div>
-                          )}
-                          <p className="text-[11px] leading-snug text-zinc-700 italic">
+                          <div className="flex justify-between items-center text-[9px] uppercase tracking-wider font-bold text-zinc-500 font-sans">
+                            {proj.technologies && (
+                              <div className="italic leading-tight opacity-80">
+                                {proj.technologies}
+                              </div>
+                            )}
+                            {proj.location && <div className="font-normal tracking-widest text-zinc-400 uppercase">{proj.location}</div>}
+                          </div>
+                          <p className="text-[11px] leading-snug text-zinc-700 italic mt-0.5">
                             {formatBullet(proj.description || "")}
                           </p>
                         </div>
@@ -498,12 +525,16 @@ export default function EditorClient({ jobId }: { jobId: string }) {
                     <div className="h-[1px] w-full bg-zinc-200" />
                   </div>
                   {resumeData.resume_content.education?.map((edu: any, i: number) => (
-                    <div key={i} className="flex justify-between items-baseline">
+                    <div key={i} className="flex justify-between items-start">
                       <div className="space-y-0.5">
-                        <h4 className="text-[11px] font-bold text-zinc-900 font-sans">{edu.degree}</h4>
-                        <p className="text-[9px] uppercase tracking-widest text-zinc-500 font-sans">{edu.institution}</p>
+                        <h4 className="text-[11px] font-bold text-zinc-900 font-sans leading-tight">{edu.degree}</h4>
+                        <div className="flex items-center gap-2">
+                          <p className="text-[9px] uppercase tracking-widest text-zinc-600 font-sans font-bold">{edu.institution}</p>
+                          {edu.location && <span className="text-[8px] text-zinc-400 tracking-widest uppercase">| {edu.location}</span>}
+                        </div>
+                        {edu.gpa && <p className="text-[9px] text-zinc-500 italic mt-0.5">GPA: {edu.gpa}</p>}
                       </div>
-                      <span className="text-[9px] font-mono text-zinc-300">{edu.year}</span>
+                      <span className="text-[9px] font-mono text-zinc-500 font-bold tracking-tighter">{edu.year}</span>
                     </div>
                   ))}
                 </div>
@@ -512,7 +543,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
               {/* ========= END EXPORT TARGET ========= */}
 
               {/* FOOTER ADORNMENT */}
-              <div className="no-print mt-auto pt-6 border-t border-zinc-100 flex justify-between items-center opacity-40 text-[8px] font-sans tracking-widest uppercase text-zinc-400">
+              <div className="print:hidden no-print mt-auto pt-6 border-t border-zinc-100 flex justify-between items-center opacity-40 text-[8px] font-sans tracking-widest uppercase text-zinc-400">
                 <span>ResumeMaxxing V1.0-MVP</span>
                 <span>System Generated Artifact</span>
               </div>

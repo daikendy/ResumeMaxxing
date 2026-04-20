@@ -6,23 +6,44 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { resumeService } from '@/lib/api/services/resumeService';
-import { LucideUpload, LucidePlus, LucideTrash2, LucideCheck, LucideTerminal, LucideUser, LucideBriefcase, LucideGraduationCap, LucideCpu, LucideFolderGit2, LucideCloudCheck, LucideArrowRight, LucideFileText, LucideEye, LucideX } from 'lucide-react';
+import { LucideUpload, LucidePlus, LucideTrash2, LucideCheck, LucideTerminal, LucideUser, LucideBriefcase, LucideGraduationCap, LucideCpu, LucideFolderGit2, LucideCloudCheck, LucideArrowRight, LucideFileText, LucideEye, LucideX, LucideAlertTriangle } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Experience {
   title: string;
   company: string;
+  location?: string;
+  startDate?: string;
+  endDate?: string;
+  technologies?: string;
   bullets: string[];
 }
 
 interface Education {
-  school: string;
+  institution: string;
   degree: string;
-  years: string;
+  year: string;
+  location?: string;
+  gpa?: string;
 }
 
 interface Project {
   title: string;
   description: string;
+  location?: string;
+  startDate?: string;
+  endDate?: string;
+  technologies?: string;
 }
 
 export default function MasterResumePage() {
@@ -30,6 +51,7 @@ export default function MasterResumePage() {
 
   // State for the interactive builder
   const [contact, setContact] = useState({ name: '', email: '', phone: '', github: '', linkedin: '' });
+  const [summary, setSummary] = useState('');
   const [experience, setExperience] = useState<Experience[]>([]);
   const [education, setEducation] = useState<Education[]>([]);
   const [skills, setSkills] = useState<string[]>([]);
@@ -51,9 +73,9 @@ export default function MasterResumePage() {
 
   // Compute if there are unsaved changes
   const hasChanges = useMemo(() => {
-    const currentHash = JSON.stringify({ contact, experience, education, skills, projects });
+    const currentHash = JSON.stringify({ contact, summary, experience, education, skills, projects });
     return currentHash !== lastSavedHash;
-  }, [contact, experience, education, skills, projects, lastSavedHash]);
+  }, [contact, summary, experience, education, skills, projects, lastSavedHash]);
 
   // Load existing DB profile
   useEffect(() => {
@@ -62,13 +84,14 @@ export default function MasterResumePage() {
         const response = await resumeService.getMasterResume('dev-user-123');
         if (response && response.resume_data) {
           const data = response.resume_data;
-          if (data.contact) setContact({
-            name: data.contact.name || '',
-            email: data.contact.email || '',
-            phone: data.contact.phone || '',
-            github: data.contact.github || '',
-            linkedin: data.contact.linkedin || '',
+          setContact({
+            name: data.contact?.name || '',
+            email: data.contact?.email || '',
+            phone: data.contact?.phone || '',
+            github: data.contact?.github || '',
+            linkedin: data.contact?.linkedin || '',
           });
+          setSummary(data.summary || '');
           setExperience(data.experience || []);
           setEducation(data.education || []);
           setSkills(data.skills || []);
@@ -82,6 +105,7 @@ export default function MasterResumePage() {
               github: data.contact?.github || '',
               linkedin: data.contact?.linkedin || '',
             },
+            summary: data.summary || '',
             experience: data.experience || [],
             education: data.education || [],
             skills: data.skills || [],
@@ -89,7 +113,14 @@ export default function MasterResumePage() {
           }));
         } else {
           // Initialize empty
-          const empty = { contact: { name: '', email: '', phone: '', github: '', linkedin: '' }, experience: [], education: [], skills: [], projects: [] };
+          const empty = {
+            contact: { name: '', email: '', phone: '', github: '', linkedin: '' },
+            summary: '',
+            experience: [],
+            education: [],
+            skills: [],
+            projects: []
+          };
           setLastSavedHash(JSON.stringify(empty));
         }
         setStatus('idle');
@@ -132,6 +163,7 @@ export default function MasterResumePage() {
           github: data.contact?.github || '',
           linkedin: data.contact?.linkedin || '',
         });
+        setSummary(data.summary || '');
         setExperience(data.experience || []);
         setEducation(data.education || []);
         setSkills(data.skills || []);
@@ -145,13 +177,24 @@ export default function MasterResumePage() {
     }
   };
 
+  const handleReset = () => {
+    setContact({ name: '', email: '', phone: '', github: '', linkedin: '' });
+    setSummary('');
+    setExperience([]);
+    setEducation([]);
+    setSkills([]);
+    setProjects([]);
+    setErrorMsg('');
+    setSaveSuccess(false);
+  };
+
   const handleSave = async () => {
     if (!hasChanges) return;
     setStatus('saving');
     setErrorMsg('');
     setSaveSuccess(false);
 
-    const parsedJson = { contact, experience, education, skills, projects };
+    const parsedJson = { contact, summary, experience, education, skills, projects };
 
     try {
       await resumeService.saveMasterResume('dev-user-123', parsedJson);
@@ -168,7 +211,7 @@ export default function MasterResumePage() {
 
   // --- SUB-RENDERERS ---
 
-  const addExperience = () => setExperience([...experience, { title: '', company: '', bullets: [''] }]);
+  const addExperience = () => setExperience([...experience, { title: '', company: '', bullets: [''], location: '', startDate: '', endDate: '', technologies: '' }]);
   const removeExperience = (idx: number) => setExperience(experience.filter((_, i) => i !== idx));
   const updateExp = (index: number, key: string, value: string) => {
     const newExp = [...experience];
@@ -191,7 +234,7 @@ export default function MasterResumePage() {
     setExperience(newExp);
   };
 
-  const addEducation = () => setEducation([...education, { school: '', degree: '', years: '' }]);
+  const addEducation = () => setEducation([...education, { institution: '', degree: '', year: '', location: '', gpa: '' }]);
   const removeEducation = (idx: number) => setEducation(education.filter((_, i) => i !== idx));
   const updateEdu = (idx: number, key: string, val: string) => {
     const newEdu = [...education];
@@ -207,7 +250,7 @@ export default function MasterResumePage() {
   };
   const removeSkill = (idx: number) => setSkills(skills.filter((_, i) => i !== idx));
 
-  const addProject = () => setProjects([...projects, { title: '', description: '' }]);
+  const addProject = () => setProjects([...projects, { title: '', description: '', startDate: '', endDate: '', technologies: '' }]);
   const removeProject = (idx: number) => setProjects(projects.filter((_, i) => i !== idx));
   const updateProject = (idx: number, key: string, val: string) => {
     const newProj = [...projects];
@@ -215,17 +258,7 @@ export default function MasterResumePage() {
     setProjects(newProj);
   };
 
-  const handleReset = () => {
-    if (window.confirm('WARNING: This will clear all data in the current session. Proceed?')) {
-      setContact({ name: '', email: '', phone: '', github: '', linkedin: '' });
-      setExperience([]);
-      setEducation([]);
-      setSkills([]);
-      setProjects([]);
-      setErrorMsg('');
-      setSaveSuccess(false);
-    }
-  };
+  // handleReset moved up before sub-renderers
 
   if (status === 'loading') {
     return (
@@ -311,8 +344,8 @@ export default function MasterResumePage() {
             onClick={handleSave}
             disabled={status === 'saving' || status === 'uploading' || !hasChanges}
             className={`transition-all uppercase font-heading px-4 md:px-8 h-10 tracking-widest text-[10px] md:text-xs font-bold ${hasChanges
-                ? 'bg-cyan-accent text-black hover:bg-white shadow-[0_0_20px_rgba(0,240,255,0.2)]'
-                : 'bg-white/5 text-white/20 border-white/5 cursor-not-allowed'
+              ? 'bg-cyan-accent text-black hover:bg-white shadow-[0_0_20px_rgba(0,240,255,0.2)]'
+              : 'bg-white/5 text-white/20 border-white/5 cursor-not-allowed'
               }`}
           >
             {status === 'saving' ? 'Saving...' : 'Save Profile'}
@@ -406,17 +439,34 @@ export default function MasterResumePage() {
         {/* CENTER COLUMN: FORM */}
         <div className="lg:col-span-8 xl:col-span-6 space-y-12 md:space-y-16">
 
-          {/* 1. CONTACT */}
-          <section id="contact" className="space-y-6">
+          {/* 1. SUMMARY */}
+          <section id="summary" className="space-y-6">
             <div className="flex items-baseline gap-4">
               <span className="text-3xl md:text-4xl font-heading text-white/10">01</span>
+              <h2 className="text-xl md:text-2xl font-heading text-white tracking-widest uppercase">Professional Summary</h2>
+            </div>
+            <div className="p-6 md:p-8 border border-white/10 bg-black/40 space-y-4">
+              <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">The Pitch</label>
+              <Textarea
+                value={summary || ''}
+                onChange={e => setSummary(e.target.value)}
+                className="bg-transparent border-white/20 text-white font-mono placeholder:text-white/10 focus:border-cyan-accent transition-all min-h-[120px] text-xs leading-relaxed"
+                placeholder="Briefly explain why you are the best at what you do..."
+              />
+            </div>
+          </section>
+
+          {/* 2. CONTACT */}
+          <section id="contact" className="space-y-6">
+            <div className="flex items-baseline gap-4">
+              <span className="text-3xl md:text-4xl font-heading text-white/10">02</span>
               <h2 className="text-xl md:text-2xl font-heading text-white tracking-widest">Personal Details</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-5 md:p-6 border border-white/10 bg-black/40 backdrop-blur-sm">
               <div className="space-y-1">
                 <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">Full Name</label>
                 <Input
-                  value={contact.name}
+                  value={contact.name || ''}
                   onChange={e => setContact({ ...contact, name: e.target.value })}
                   className="bg-transparent border-white/20 text-white font-mono placeholder:text-white/10 focus:border-cyan-accent transition-all uppercase h-9 text-xs"
                   placeholder="John Doe"
@@ -425,7 +475,7 @@ export default function MasterResumePage() {
               <div className="space-y-1">
                 <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">Email Address</label>
                 <Input
-                  value={contact.email}
+                  value={contact.email || ''}
                   onChange={e => setContact({ ...contact, email: e.target.value })}
                   className="bg-transparent border-white/20 text-white font-mono placeholder:text-white/10 focus:border-cyan-accent transition-all h-9 text-xs"
                   placeholder="john@example.com"
@@ -434,7 +484,7 @@ export default function MasterResumePage() {
               <div className="space-y-1">
                 <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">Phone Number</label>
                 <Input
-                  value={contact.phone}
+                  value={contact.phone || ''}
                   onChange={e => setContact({ ...contact, phone: e.target.value })}
                   className="bg-transparent border-white/20 text-white font-mono placeholder:text-white/10 focus:border-cyan-accent transition-all h-9 text-xs"
                   placeholder="+1 (555) 000-0000"
@@ -443,7 +493,7 @@ export default function MasterResumePage() {
               <div className="space-y-1">
                 <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">LinkedIn</label>
                 <Input
-                  value={contact.linkedin}
+                  value={contact.linkedin || ''}
                   onChange={e => setContact({ ...contact, linkedin: e.target.value })}
                   className="bg-transparent border-white/20 text-white font-mono placeholder:text-white/10 focus:border-cyan-accent transition-all h-9 text-xs"
                   placeholder="linkedin.com/in/johndoe"
@@ -452,7 +502,7 @@ export default function MasterResumePage() {
               <div className="space-y-1 sm:col-span-2">
                 <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">GitHub</label>
                 <Input
-                  value={contact.github}
+                  value={contact.github || ''}
                   onChange={e => setContact({ ...contact, github: e.target.value })}
                   className="bg-transparent border-white/20 text-white font-mono placeholder:text-white/10 focus:border-cyan-accent transition-all h-9 text-xs"
                   placeholder="github.com/johndoe"
@@ -488,12 +538,34 @@ export default function MasterResumePage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">Job Title</label>
-                      <Input value={exp.title} onChange={e => updateExp(expIdx, 'title', e.target.value)} className="bg-transparent border-white/20 text-white font-mono h-10 text-xs md:text-sm" placeholder="Senior Architect" />
+                      <Input value={exp.title || ''} onChange={e => updateExp(expIdx, 'title', e.target.value)} className="bg-transparent border-white/20 text-white font-mono h-10 text-xs md:text-sm" placeholder="Senior Architect" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">Company</label>
-                      <Input value={exp.company} onChange={e => updateExp(expIdx, 'company', e.target.value)} className="bg-transparent border-white/20 text-white font-mono h-10 text-xs md:text-sm" placeholder="Global Tech Inc." />
+                      <Input value={exp.company || ''} onChange={e => updateExp(expIdx, 'company', e.target.value)} className="bg-transparent border-white/20 text-white font-mono h-10 text-xs md:text-sm" placeholder="Global Tech Inc." />
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-2">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">Start Date</label>
+                        <Input value={exp.startDate || ''} onChange={e => updateExp(expIdx, 'startDate', e.target.value)} className="bg-transparent border-white/20 text-white font-mono h-10 text-[10px]" placeholder="Jan 2020" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">End Date</label>
+                        <Input value={exp.endDate || ''} onChange={e => updateExp(expIdx, 'endDate', e.target.value)} className="bg-transparent border-white/20 text-white font-mono h-10 text-[10px]" placeholder="Dec 2023" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">Location</label>
+                      <Input value={exp.location || ''} onChange={e => updateExp(expIdx, 'location', e.target.value)} className="bg-transparent border-white/20 text-white font-mono h-10 text-xs" placeholder="San Francisco, CA" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 mb-4">
+                    <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">Technologies Used</label>
+                    <Input value={exp.technologies || ''} onChange={e => updateExp(expIdx, 'technologies', e.target.value)} className="bg-transparent border-white/20 text-white font-mono h-10 text-xs" placeholder="React, Node.js, AWS, etc." />
                   </div>
 
                   <div className="space-y-4">
@@ -507,7 +579,7 @@ export default function MasterResumePage() {
                       <div key={bIdx} className="flex gap-4 group/bullet">
                         <div className="w-0.5 min-h-[60px] bg-white/5 group-hover/bullet:bg-cyan-accent transition-colors" />
                         <Textarea
-                          value={bullet}
+                          value={bullet || ''}
                           onChange={e => updateBullet(expIdx, bIdx, e.target.value)}
                           className="bg-transparent border-transparent hover:border-white/10 focus:border-white/20 text-xs text-white/80 font-mono resize-none h-[60px] py-1"
                           placeholder="What did you achieve in this role?"
@@ -535,24 +607,38 @@ export default function MasterResumePage() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-4">
               {education.map((edu, idx) => (
-                <div key={idx} className="border border-white/10 bg-black/40 p-6 space-y-4 relative">
+                <div key={idx} className="border border-white/10 bg-black/40 p-6 space-y-6 relative group">
                   <button onClick={() => removeEducation(idx)} className="absolute top-4 right-4 text-white/20 hover:text-red-500 p-2">
                     <LucideTrash2 className="w-4 h-4" />
                   </button>
-                  <div className="space-y-1">
-                    <label className="text-[9px] uppercase text-white/40 font-heading">School / University</label>
-                    <Input value={edu.school} onChange={e => updateEdu(idx, 'school', e.target.value)} className="bg-transparent border-white/10 text-xs font-mono h-8" placeholder="University of Life" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-1">
-                      <label className="text-[9px] uppercase text-white/40 font-heading">Degree</label>
-                      <Input value={edu.degree} onChange={e => updateEdu(idx, 'degree', e.target.value)} className="bg-transparent border-white/10 text-xs font-mono h-8" placeholder="B.S. Innovation" />
+                      <label className="text-[10px] uppercase text-white/40 font-heading tracking-widest">Institution</label>
+                      <Input value={edu.institution || ''} onChange={e => updateEdu(idx, 'institution', e.target.value)} className="bg-transparent border-white/20 text-xs font-mono h-10 text-white" placeholder="University of Life" />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] uppercase text-white/40 font-heading">Years</label>
-                      <Input value={edu.years} onChange={e => updateEdu(idx, 'years', e.target.value)} className="bg-transparent border-white/10 text-xs font-mono h-8" placeholder="2020 - 2024" />
+                      <label className="text-[10px] uppercase text-white/40 font-heading tracking-widest">Degree</label>
+                      <Input value={edu.degree || ''} onChange={e => updateEdu(idx, 'degree', e.target.value)} className="bg-transparent border-white/20 text-xs font-mono h-10 text-white" placeholder="B.S. Innovation" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-2">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase text-white/40 font-heading tracking-widest">Year</label>
+                        <Input value={edu.year || ''} onChange={e => updateEdu(idx, 'year', e.target.value)} className="bg-transparent border-white/20 text-xs font-mono h-10 text-white" placeholder="2020 - 2024" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase text-white/40 font-heading tracking-widest">GPA</label>
+                        <Input value={edu.gpa || ''} onChange={e => updateEdu(idx, 'gpa', e.target.value)} className="bg-transparent border-white/20 text-xs font-mono h-10 text-white" placeholder="3.8/4.0" />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase text-white/40 font-heading tracking-widest">Location</label>
+                      <Input value={edu.location || ''} onChange={e => updateEdu(idx, 'location', e.target.value)} className="bg-transparent border-white/20 text-xs font-mono h-10 text-white" placeholder="Boston, MA" />
                     </div>
                   </div>
                 </div>
@@ -576,7 +662,7 @@ export default function MasterResumePage() {
               {skills.map((skill, idx) => (
                 <div key={idx} className="flex items-center group relative">
                   <Input
-                    value={skill}
+                    value={skill || ''}
                     onChange={e => updateSkill(idx, e.target.value)}
                     className="w-28 md:w-32 bg-transparent border-white/20 text-[10px] font-mono h-8 uppercase focus:border-cyan-accent px-2"
                     placeholder="New Skill"
@@ -607,13 +693,35 @@ export default function MasterResumePage() {
                   <button onClick={() => removeProject(idx)} className="absolute top-4 right-4 text-white/20 hover:text-red-500 p-2">
                     <LucideTrash2 className="w-4 h-4" />
                   </button>
-                  <div className="space-y-2">
-                    <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">Project Name</label>
-                    <Input value={proj.title} onChange={e => updateProject(idx, 'title', e.target.value)} className="bg-transparent border-white/20 text-white font-mono h-10 text-xs md:text-sm" placeholder="AI Resume Builder" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">Project Name</label>
+                      <Input value={proj.title || ''} onChange={e => updateProject(idx, 'title', e.target.value)} className="bg-transparent border-white/20 text-white font-mono h-10 text-xs md:text-sm" placeholder="AI Resume Builder" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">Start</label>
+                        <Input value={proj.startDate || ''} onChange={e => updateProject(idx, 'startDate', e.target.value)} className="bg-transparent border-white/20 text-white font-mono h-10 text-[10px]" placeholder="Jan 2020" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">End</label>
+                        <Input value={proj.endDate || ''} onChange={e => updateProject(idx, 'endDate', e.target.value)} className="bg-transparent border-white/20 text-white font-mono h-10 text-[10px]" placeholder="Dec 2021" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">Location</label>
+                      <Input value={proj.location || ''} onChange={e => updateProject(idx, 'location', e.target.value)} className="bg-transparent border-white/20 text-white font-mono h-10 text-xs" placeholder="Remote / GitHub" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">Technologies</label>
+                      <Input value={proj.technologies || ''} onChange={e => updateProject(idx, 'technologies', e.target.value)} className="bg-transparent border-white/20 text-white font-mono h-10 text-xs" placeholder="Next.js, FastAPI, PostgreSQL" />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] uppercase font-heading text-white/40 tracking-widest">Description</label>
-                    <Textarea value={proj.description} onChange={e => updateProject(idx, 'description', e.target.value)} className="bg-transparent border-white/20 text-white font-mono text-xs h-20" placeholder="Built a platform that uses AI to help users land their dream jobs." />
+                    <Textarea value={proj.description || ''} onChange={e => updateProject(idx, 'description', e.target.value)} className="bg-transparent border-white/20 text-white font-mono text-xs h-20" placeholder="Built a platform that uses AI to help users land their dream jobs." />
                   </div>
                 </div>
               ))}
@@ -669,19 +777,39 @@ export default function MasterResumePage() {
               onClick={handleSave}
               disabled={status === 'saving' || !hasChanges}
               className={`w-full h-16 transition-all uppercase font-heading tracking-[0.2em] text-xs font-bold shadow-[0_4px_20px_rgba(255,255,255,0.05)] border ${hasChanges
-                  ? 'bg-white text-black hover:bg-cyan-accent hover:border-cyan-accent shadow-[0_0_20px_rgba(0,240,255,0.1)]'
-                  : 'bg-white/5 text-white/20 border-white/5 cursor-not-allowed'
+                ? 'bg-white text-black hover:bg-cyan-accent hover:border-cyan-accent shadow-[0_0_20px_rgba(0,240,255,0.1)]'
+                : 'bg-white/5 text-white/20 border-white/5 cursor-not-allowed'
                 }`}
             >
               {hasChanges ? 'Commit Changes' : 'Profile up to date'}
             </Button>
 
-            <button
-              onClick={handleReset}
-              className="w-full text-[10px] text-white/20 hover:text-red-500 uppercase tracking-widest font-mono transition-colors pt-2"
-            >
-              [ Reset Local Buffer ]
-            </button>
+            <AlertDialog>
+              <AlertDialogTrigger
+                render={
+                  <button
+                    className="w-full text-[10px] text-white/20 hover:text-red-500 uppercase tracking-widest font-mono transition-colors pt-2"
+                  >
+                    [ Reset Local Buffer ]
+                  </button>
+                }
+              />
+              <AlertDialogContent className="bg-zinc-950 border-white/10 text-white font-sans">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="font-heading tracking-widest uppercase text-amber-500 flex items-center gap-2 text-sm">
+                    <LucideAlertTriangle className="w-4 h-4" />
+                    Heavy Reset Warning
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-white/40 text-[11px] uppercase tracking-wide font-mono leading-relaxed">
+                    This action will clear your current local session data. You will lose all unsaved progress in the form. This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="mt-6">
+                  <AlertDialogCancel className="bg-white/5 border-white/10 text-white/40 hover:bg-white/10 hover:text-white uppercase font-heading tracking-widest text-[9px]">Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleReset} className="bg-red-600/20 text-red-500 border border-red-500/30 hover:bg-red-600 hover:text-white uppercase font-heading tracking-widest text-[9px]">Confirm Reset</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
             {errorMsg && <div className="text-[10px] text-red-500 font-mono uppercase bg-red-500/5 border border-red-500/20 p-4">{errorMsg}</div>}
           </div>
