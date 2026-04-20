@@ -49,7 +49,7 @@ export default function Navbar() {
         <SignedOut>
           <SignInButton mode="modal">
             <Button className="bg-white/5 hover:bg-cyan-accent hover:text-black border border-white/10 text-white uppercase text-[10px] font-bold tracking-widest h-9 px-6 transition-all">
-              Initialize Session
+              Get Started
             </Button>
           </SignInButton>
         </SignedOut>
