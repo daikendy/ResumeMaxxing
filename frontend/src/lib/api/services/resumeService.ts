@@ -58,5 +58,15 @@ export const resumeService = {
 
   deleteTrackedJob: async (jobId: number, token: string): Promise<void> => {
     await api.delete(`/jobs/${jobId}`, authHeaders(token));
+  },
+
+  getUserProfile: async (token: string): Promise<any> => {
+    const response = await api.get<any>('/users/me', authHeaders(token));
+    return response.data;
+  },
+
+  redeemReferralCode: async (code: string, token: string): Promise<any> => {
+    const response = await api.post<any>('/users/redeem-code', { code }, authHeaders(token));
+    return response.data;
   }
 };

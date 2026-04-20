@@ -12,6 +12,8 @@ class User(Base):
     generations_used = Column(Integer, default=0)
     generations_limit = Column(Integer, default=5)
     referral_code = Column(String(50), unique=True, index=True)
+    referred_by = Column(String(255), nullable=True)
+    bonus_quota = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Java @OneToMany equivalent: A user has many jobs and resumes

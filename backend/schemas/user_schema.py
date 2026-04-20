@@ -14,7 +14,13 @@ class UserResponse(BaseModel):
     subscription_tier: str
     generations_used: int
     generations_limit: int
+    referral_code: Optional[str] = None
+    referred_by: Optional[str] = None
+    bonus_quota: int = 0
     created_at: datetime
 
     class Config:
         from_attributes = True # This tells Pydantic to read the SQLAlchemy model perfectly
+
+class RedeemCodeRequest(BaseModel):
+    code: str

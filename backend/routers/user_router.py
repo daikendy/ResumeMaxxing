@@ -6,7 +6,9 @@ from database import get_db
 from models.master_resume_model import MasterResume
 from models.user_model import User
 from schemas.master_resume_schema import MasterResumeCreate, MasterResumeResponse
+from schemas.user_schema import UserResponse, RedeemCodeRequest
 from services.ai_service import extract_resume_data
+from crud import user_crud
 
 from auth_utils import get_current_user, sync_user_to_db
 
@@ -86,3 +88,23 @@ async def upload_resume(current_user: dict = Depends(get_current_user), db: Sess
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/me", response_model=UserResponse)
+def get_user_me(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Fetch current user details including quota and referral code."""
+    sync_user_to_db(current_user, db)
+    user = user_crud.get_user(db, current_user["id"])
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+@router.post("/redeem-code")
+def redeem_code(payload: RedeemCodeRequest, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Redeem a referral code for bonus quota."""
+    sync_user_to_db(current_user, db)
+    result = user_crud.redeem_referral_code(db, current_user["id"], payload.code)
+    
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["message"])
+    
+    return result

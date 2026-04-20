@@ -18,8 +18,9 @@ async def generate_tailored_resume(payload: ResumeCreate, current_user: dict = D
     
     # 1. Ensure User is synced
     user = sync_user_to_db(current_user, db)
-         
-    if user.generations_used >= user.generations_limit:
+    
+    total_allowed = user.generations_limit + user.bonus_quota
+    if user.generations_used >= total_allowed:
         raise QuotaExceededException()
 
     # 2. Fetch the Job Description

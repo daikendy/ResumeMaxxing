@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { UserProfile } from '@clerk/clerk-react';
+import { UserProfile, useAuth } from '@clerk/clerk-react';
 import { AuthGuard } from '@/components/AuthGuard';
 import { 
   LucideSettings, 
@@ -12,11 +12,32 @@ import {
   LucideDatabase
 } from 'lucide-react';
 import Link from 'next/link';
+import { resumeService } from '@/lib/api/services/resumeService';
 
 export default function SettingsPage() {
+  const { getToken } = useAuth();
+  const [userData, setUserData] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const data = await resumeService.getUserProfile(token);
+        setUserData(data);
+      } catch (e) {
+        console.error("Failed to fetch user profile", e);
+      }
+    };
+    fetchUserData();
+  }, [getToken]);
+
+  const currentLimit = userData ? (userData.generations_limit + userData.bonus_quota) : 5;
+  const usagePercent = userData ? Math.min((userData.generations_used / currentLimit) * 100, 100) : 0;
+
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-black text-zinc-50 selection:bg-cyan-accent selection:text-black font-sans pb-20">
+      <div className="min-h-screen bg-black text-zinc-50 selection:bg-cyan-accent selection:text-black font-sans pb-20 font-sans">
         
         {/* TOP NAVIGATION */}
         <div className="h-16 border-b border-zinc-900 bg-zinc-950/50 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-50">
@@ -53,7 +74,7 @@ export default function SettingsPage() {
                 appearance={{
                   baseTheme: undefined,
                   elements: {
-                    card: "bg-transparent shadow-none w-full",
+                    card: "bg-transparent shadow-none w-full border-none",
                     navbar: "hidden", // We'll use our own side list or just show the profile
                     rootBox: "w-full",
                     scrollBox: "bg-transparent",
@@ -63,14 +84,15 @@ export default function SettingsPage() {
                     profileSectionTitleText: "text-zinc-400 text-[10px] font-black uppercase tracking-[0.2em] border-b border-zinc-900 pb-2 mb-6",
                     userPreviewMainIdentifier: "text-white font-bold",
                     userPreviewSecondaryIdentifier: "text-zinc-500 font-mono text-[10px]",
-                    formButtonPrimary: "bg-white text-black hover:bg-zinc-200 transition-all rounded-none uppercase text-[10px] font-black tracking-widest py-3",
+                    formButtonPrimary: "bg-white text-black hover:bg-zinc-200 transition-all rounded-none uppercase text-[10px] font-black tracking-widest py-3 border-none shadow-none",
                     formFieldLabel: "text-zinc-400 text-[9px] uppercase tracking-widest font-bold",
                     formFieldInput: "bg-zinc-900 border-zinc-800 text-white rounded-none focus:ring-1 focus:ring-cyan-accent",
                     footer: "hidden",
                     userButtonPopoverFooter: "hidden",
                     actionCard: "bg-zinc-900 border border-zinc-800 rounded-none",
                     badge: "bg-zinc-800 text-zinc-300 rounded-none text-[8px] uppercase font-bold",
-                    profilePage: "gap-12"
+                    profilePage: "gap-12",
+                    form: "p-0",
                   }
                 }}
               />
@@ -78,7 +100,7 @@ export default function SettingsPage() {
           </div>
 
           {/* RIGHT COLUMN: SYSTEM METRICS & SECURITY */}
-          <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-700 delay-200">
+          <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-700 delay-200 font-sans">
             
             {/* SECURITY WIDGET */}
             <div className="p-6 bg-zinc-950 border border-zinc-900 industrial-grid relative group overflow-hidden">
@@ -107,7 +129,7 @@ export default function SettingsPage() {
             </div>
 
             {/* QUOTA WIDGET */}
-            <div className="p-6 bg-zinc-950 border border-zinc-900 relative group overflow-hidden">
+            <div className="p-6 bg-zinc-950 border border-zinc-900 relative group overflow-hidden font-sans">
                <div className="relative z-10 space-y-4">
                  <div className="flex items-center gap-2 pb-3 border-b border-zinc-900">
                     <LucideZap className="w-3.5 h-3.5 text-cyan-accent" />
@@ -115,22 +137,27 @@ export default function SettingsPage() {
                  </div>
                  <div className="space-y-4">
                     <div className="flex justify-between items-end">
-                       <span className="text-3xl font-black text-white italic">FREE</span>
-                       <span className="text-[9px] font-mono text-zinc-600 uppercase">Tier 0.1</span>
+                       <span className="text-3xl font-black text-white italic uppercase tracking-tighter">
+                         {userData?.subscription_tier || 'FREE'}
+                       </span>
+                       <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-tighter">Tier 1.0</span>
                     </div>
                     <div className="space-y-1.5">
-                       <div className="flex justify-between text-[9px] uppercase tracking-widest text-zinc-500">
+                       <div className="flex justify-between text-[9px] uppercase tracking-[0.2em] text-zinc-500 font-black">
                           <span>Generations</span>
-                          <span>Max Limit: 5</span>
+                          <span>{userData?.generations_used || 0} / {currentLimit}</span>
                        </div>
-                       <div className="h-1.5 w-full bg-zinc-900 border border-zinc-800 rounded-full overflow-hidden">
-                          <div className="h-full w-[20%] bg-cyan-accent shadow-[0_0_10px_rgba(34,211,238,0.5)]" />
+                       <div className="h-1.5 w-full bg-zinc-900 border border-zinc-800 rounded-none overflow-hidden">
+                          <div 
+                            className="h-full bg-cyan-accent shadow-[0_0_10px_rgba(34,211,238,0.5)] transition-all duration-1000" 
+                            style={{ width: `${usagePercent}%` }}
+                          />
                        </div>
                     </div>
-                    <button className="w-full py-3 border border-zinc-800 text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all flex items-center justify-center gap-2 group">
+                    <Link href="#upgrade" className="w-full py-3 border border-zinc-800 text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-100 hover:text-black hover:bg-white transition-all flex items-center justify-center gap-2 group">
                        <LucideCreditCard className="w-3 h-3 transition-transform group-hover:scale-110" />
-                       Upgrade Account
-                    </button>
+                       UPGRADE_CAPACITY
+                    </Link>
                  </div>
                </div>
                <div className="absolute -bottom-2 -right-2 p-2 opacity-5">

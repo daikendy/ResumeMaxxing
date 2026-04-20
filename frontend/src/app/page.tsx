@@ -138,9 +138,9 @@ export default function Home() {
           <span className="text-[10px] font-mono text-white/20 uppercase tracking-[0.3em]">© 2026 Resumemaxxing. Engineered for impact.</span>
         </div>
         <div className="flex gap-8 text-[10px] font-mono text-white/20 uppercase tracking-widest">
-          <Link href="#" className="hover:text-cyan-accent transition-colors">Privacy</Link>
-          <Link href="#" className="hover:text-cyan-accent transition-colors">Terms</Link>
-          <Link href="#" className="hover:text-cyan-accent transition-colors">Documentation</Link>
+          <Link href="/privacy" className="hover:text-white transition-colors underline decoration-zinc-800 underline-offset-4 font-bold">Privacy</Link>
+          <Link href="/terms" className="hover:text-white transition-colors underline decoration-zinc-800 underline-offset-4 font-bold">Terms</Link>
+          <Link href="mailto:support@resumemaxxing.com" className="hover:text-white transition-colors">Contact</Link>
         </div>
       </footer>
 

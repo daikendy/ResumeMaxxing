@@ -8,6 +8,8 @@ import Navbar from "@/components/Navbar";
 
 const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
+import { Toaster } from "sonner";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -20,6 +22,18 @@ export default function RootLayout({
   return (
     <ClerkProvider 
       publishableKey={PUBLISHABLE_KEY!}
+      localization={{
+        signIn: {
+          start: {
+            subtitle: "Enter credentials or use biometric uplink. By signing in, you agree to our Terms and Privacy Policy."
+          }
+        },
+        signUp: {
+          start: {
+            subtitle: "Create your operator profile. By signing up, you agree to our Terms and Privacy Policy."
+          }
+        }
+      }}
       appearance={{
         baseTheme: dark,
         variables: {
@@ -42,6 +56,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <body className="min-h-full flex flex-col font-sans bg-black text-white">
+          <Toaster position="bottom-right" theme="dark" richColors closeButton />
           <Navbar />
           <main className="flex-grow pt-16">
             {children}

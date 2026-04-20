@@ -32,6 +32,7 @@ import {
   LucideRedo2
 } from 'lucide-react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 type EditorState = 'idle' | 'loading' | 'success' | 'error';
 
@@ -164,6 +165,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
 
       console.log("✅ AI RESPONSE RECEIVED:", response.resume_content);
       stack.set(response);
+      toast.success("OPTIMIZATION COMPLETE", { description: "Your resume version is ready for export." });
 
       // Calculate Before vs After
       const baseScore = calculateMatchScore(targetJobDescription, masterProfile);
@@ -187,6 +189,12 @@ export default function EditorClient({ jobId }: { jobId: string }) {
         setIsPremiumModalOpen(true);
         setStatus('idle'); // Reset status so user can try again after upgrade
       } else {
+        setErrorDetails({
+          title: "SYSTEM_MALFUNCTION",
+          message: "Unable to reach the AI engine. Please check your uplink.",
+          code: "INTERNAL_ERROR"
+        });
+        toast.error("GENERATION ERROR", { description: "The system encountered a technical glitch." });
         setStatus('error');
       }
     }

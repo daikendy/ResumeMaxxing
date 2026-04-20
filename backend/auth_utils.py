@@ -27,8 +27,18 @@ def get_jwks():
         _jwks_cache = response.json()
     return _jwks_cache
 
+import string
+import random
 from sqlalchemy.orm import Session
 from models.user_model import User
+
+def generate_referral_code(db: Session):
+    chars = string.ascii_uppercase + string.digits
+    while True:
+        code = ''.join(random.choices(chars, k=6))
+        # Collision check
+        if not db.query(User).filter(User.referral_code == code).first():
+            return code
 
 def sync_user_to_db(user_data: dict, db: Session):
     """
@@ -43,7 +53,8 @@ def sync_user_to_db(user_data: dict, db: Session):
         db_user = User(
             id=user_id,
             email=email,
-            subscription_tier='free'
+            subscription_tier='free',
+            referral_code=generate_referral_code(db)
         )
         db.add(db_user)
         db.commit()

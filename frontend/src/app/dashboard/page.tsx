@@ -20,11 +20,14 @@ import {
   LucideSearch,
   LucideFileText,
   LucideX,
-  LucideAlertCircle,
   LucideTrash2,
-  LucideSettings
+  LucideSettings,
+  LucideShare2,
+  LucideCopy,
+  LucideShieldCheck
 } from 'lucide-react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 interface TrackedJob {
   id: number;
@@ -55,13 +58,47 @@ export default function DashboardPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [errorDetails, setErrorDetails] = useState<{title: string, message: string} | null>(null);
+  const [userData, setUserData] = useState<any>(null);
+  const [referralInput, setReferralInput] = useState('');
+  const [isRedeeming, setIsRedeeming] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   useEffect(() => {
     if (isLoaded) {
       fetchJobs();
       fetchProfileStatus();
+      fetchUserData();
     }
   }, [isLoaded]);
+
+  const fetchUserData = async () => {
+    try {
+      const token = await getToken();
+      if (!token) return;
+      const data = await resumeService.getUserProfile(token);
+      setUserData(data);
+    } catch (e) {
+      console.error("Failed to fetch user profile", e);
+    }
+  };
+
+  const handleRedeemCode = async () => {
+    if (!referralInput) return;
+    setIsRedeeming(true);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("No session");
+      await resumeService.redeemReferralCode(referralInput, token);
+      setReferralInput('');
+      fetchUserData(); // Refresh quota
+      toast.success("BONUS ACTIVATED!", { description: "+5 Generations added to your account." });
+    } catch (err: any) {
+      toast.error("REFERRAL FAILED", { description: err.response?.data?.detail || "Invalid or double-referral code." });
+    } finally {
+      setIsRedeeming(false);
+    }
+  };
 
   const fetchProfileStatus = async () => {
     try {
@@ -131,16 +168,31 @@ export default function DashboardPage() {
   };
 
   const handleDeleteJob = async (id: number) => {
-    if (!confirm("Are you sure you want to terminate this track?")) return;
+    // Premium Inline Confirmation
+    if (confirmDeleteId !== id) {
+      setConfirmDeleteId(id);
+      // Auto-reset after 3 seconds
+      setTimeout(() => setConfirmDeleteId(null), 3000);
+      return;
+    }
+
     try {
       const token = await getToken();
       if (!token) return;
       await resumeService.deleteTrackedJob(id, token);
       setJobs(jobs.filter(j => j.id !== id));
+      toast.success("TRACK TERMINATED", { description: "Opportunity has been removed from your radar." });
     } catch (e) {
-      console.error(e);
+      toast.error("DELETE FAILED");
+    } finally {
+      setConfirmDeleteId(null);
     }
   };
+
+  const filteredJobs = jobs.filter(job => 
+    job.job_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    job.company_name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <AuthGuard>
@@ -243,6 +295,8 @@ export default function DashboardPage() {
               <input 
                 type="text" 
                 placeholder="SEARCH_TRACKS..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="bg-transparent border-none text-xs font-mono text-white placeholder:text-white/10 w-full focus:outline-none uppercase tracking-widest" 
               />
             </div>
@@ -288,12 +342,20 @@ export default function DashboardPage() {
               Start First Track
             </Button>
           </div>
+        ) : filteredJobs.length === 0 && searchTerm ? (
+          <div className="flex flex-col items-center justify-center py-40 border border-dashed border-white/10 bg-black/40">
+            <LucideSearch className="w-12 h-12 text-white/10 mb-6" />
+            <h3 className="text-xl font-heading text-white/40 uppercase tracking-[0.2em] mb-2">No matches found</h3>
+            <p className="text-[10px] font-mono text-white/20 uppercase tracking-widest text-center px-6">
+              Adjust your parameters to locate the track.
+            </p>
+          </div>
         ) : (
           /* JOB GRID */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {jobs.map((job) => (
+            {filteredJobs.map((job) => (
               <Card key={job.id} className="bg-black/60 border-white/10 hover:border-cyan-accent/30 transition-all group overflow-hidden relative flex flex-col h-full min-h-[320px]">
-                <div className="absolute top-0 left-0 w-1 h-full bg-cyan-accent/0 group-hover:bg-cyan-accent transition-all" />
+                <div className={`absolute top-0 left-0 w-1 h-full transition-all ${confirmDeleteId === job.id ? 'bg-red-500' : 'bg-cyan-accent/0 group-hover:bg-cyan-accent'}`} />
                 
                 <CardHeader className="pb-4">
                   <div className="flex justify-between items-start mb-2">
@@ -329,16 +391,16 @@ export default function DashboardPage() {
                   <Button 
                     variant="ghost" 
                     onClick={() => handleDeleteJob(job.id)}
-                    className="w-10 h-10 p-0 hover:bg-red-500/10 hover:text-red-500 text-white/20 border border-white/10 transition-colors"
+                    className={`w-10 h-10 p-0 transition-colors ${confirmDeleteId === job.id ? 'bg-red-500 text-white' : 'hover:bg-red-500/10 hover:text-red-500 text-white/20'} border border-white/10`}
                   >
-                    <LucideTrash2 className="w-4 h-4" />
+                    {confirmDeleteId === job.id ? <LucideAlertCircle className="w-4 h-4 animate-pulse" /> : <LucideTrash2 className="w-4 h-4" />}
                   </Button>
                 </CardFooter>
               </Card>
             ))}
             
             {/* ADD MORE PLACEHOLDER CARD */}
-            {jobs.length < 3 && (
+            {jobs.length < (userData?.generations_limit + userData?.bonus_quota || 5) && (
               <button 
                 onClick={() => setIsModalOpen(true)}
                 className="h-full min-h-[320px] border border-dashed border-white/10 hover:border-cyan-accent/40 bg-white/[0.02] hover:bg-cyan-muted transition-all flex flex-col items-center justify-center group"
@@ -351,7 +413,7 @@ export default function DashboardPage() {
             )}
             
             {/* TIER LIMIT CARD */}
-            {jobs.length >= 3 && (
+            {jobs.length >= (userData?.generations_limit + userData?.bonus_quota || 5) && (
               <div className="h-full min-h-[320px] border border-white/10 bg-zinc-950/50 p-8 flex flex-col items-center justify-center text-center">
                 <div className="p-3 bg-white/5 mb-4">
                   <LucideTerminal className="w-6 h-6 text-white/20" />
@@ -364,6 +426,80 @@ export default function DashboardPage() {
             )}
           </div>
         ) }
+
+        {/* [Autopilot Referral System] */}
+        <div className="mt-20 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-500">
+           
+           {/* THE GENERATOR CARD */}
+           <div className="p-8 bg-zinc-950 border border-zinc-900 group overflow-hidden relative">
+              <div className="relative z-10 space-y-6">
+                 <div>
+                   <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Your Inviter Uplink</h3>
+                   <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-1">Get +5 Generations for every person you bring in.</p>
+                 </div>
+                 
+                 <div className="flex gap-2">
+                    <div className="flex-grow p-4 bg-zinc-900 border border-zinc-800 flex items-center justify-between font-mono text-2xl font-black text-cyan-accent tracking-widest italic uppercase">
+                       {userData?.referral_code || '------'}
+                       <button 
+                         onClick={() => {
+                           navigator.clipboard.writeText(userData?.referral_code || '');
+                           toast.success('COPIED', { description: 'Referral code saved to clipboard.' });
+                         }}
+                         className="p-1 hover:text-white transition-colors"
+                       >
+                         <LucideCopy className="w-4 h-4" />
+                       </button>
+                    </div>
+                    <button className="px-6 bg-white text-black text-[10px] font-black uppercase tracking-widest hover:bg-cyan-accent transition-all">
+                       SHARE
+                    </button>
+                 </div>
+              </div>
+              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                 <LucideShare2 className="w-16 h-16 text-zinc-500" />
+              </div>
+           </div>
+
+           {/* THE REDEEM CARD */}
+           <div className="p-8 bg-zinc-950 border border-zinc-900 overflow-hidden relative">
+              {userData?.referred_by ? (
+                <div className="h-full flex flex-col items-center justify-center text-center space-y-3">
+                   <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                      <LucideShieldCheck className="w-6 h-6 text-emerald-500" />
+                   </div>
+                   <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest leading-loose">
+                     Referral Status: <span className="text-emerald-500">OPTIMIZED</span><br/>
+                     Bonus Quota Active.
+                   </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                   <div>
+                     <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Redeem Bonus</h3>
+                     <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-1">Found a code? Enter it here to boost your power (+5).</p>
+                   </div>
+                   <div className="flex gap-2">
+                      <input 
+                        type="text"
+                        placeholder="ENTER_CODE_HERE"
+                        value={referralInput}
+                        onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
+                        className="flex-grow p-4 bg-zinc-900 border border-zinc-800 font-mono text-sm text-white uppercase focus:border-cyan-accent outline-none"
+                      />
+                      <button 
+                        onClick={handleRedeemCode}
+                        disabled={isRedeeming || !referralInput}
+                        className="px-6 bg-zinc-800 text-white text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all disabled:opacity-20"
+                      >
+                         {isRedeeming ? 'VALIDATING...' : 'ACTIVATE'}
+                      </button>
+                   </div>
+                </div>
+              )}
+           </div>
+
+        </div>
       </main>
 
       {/* FOOTER STATS */}
@@ -378,8 +514,18 @@ export default function DashboardPage() {
             <span>ENFORCING_TIER: FREE_V1</span>
           </div>
         </div>
-        <div className="hidden sm:block">
-          TOTAL_TRACKS_SAVED: {jobs.length} / 03
+        <div className="hidden sm:block uppercase tracking-widest text-zinc-500 font-mono">
+          AI_GENERATIONS: {userData?.generations_used || 0} / {userData ? (userData.generations_limit + userData.bonus_quota) : '5'}
+        </div>
+        <div className="flex items-center gap-4">
+           <Link href="/terms" className="hover:text-white transition-colors flex items-center gap-1.5 underline decoration-zinc-800 underline-offset-4">
+             <span>Terms</span>
+           </Link>
+           <Link href="/privacy" className="hover:text-white transition-colors flex items-center gap-1.5 underline decoration-zinc-800 underline-offset-4">
+             <span>Privacy</span>
+           </Link>
+           <span className="text-zinc-800">|</span>
+           <span>v1.0.4-STABLE</span>
         </div>
       </footer>
 

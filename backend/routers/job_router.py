@@ -33,9 +33,13 @@ def create_job(payload: JobCreate, current_user: dict = Depends(get_current_user
     user_id = current_user["id"]
     
     # 1. Enforce the V1 Limit
+    from models.user_model import User
+    db_user = db.query(User).filter(User.id == user_id).first()
+    total_quota = (db_user.generations_limit + db_user.bonus_quota) if db_user else 5
+    
     job_count = db.query(TrackedJob).filter(TrackedJob.user_id == user_id).count()
-    if job_count >= 3:
-        raise LimitReachedException("FREE TIER LIMIT: You have reached the maximum of 3 tracked jobs. Please upgrade to Pro for unlimited tracks.")
+    if job_count >= total_quota:
+        raise LimitReachedException(f"TIER LIMIT: You have reached your limit of {total_quota} tracked jobs. Invite friends or upgrade to Pro for more.")
     
     # 2. Create the job
     db_job = TrackedJob(
