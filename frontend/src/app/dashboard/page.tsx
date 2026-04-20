@@ -264,7 +264,7 @@ export default function DashboardPage() {
 
                 <CardFooter className="pt-4 border-t border-white/5 flex gap-2">
                   <Button 
-                    onClick={() => router.push(`/editor/${job.id}`)}
+                    onClick={() => router.push(`/editor?jobId=${job.id}`)}
                     className="flex-grow bg-white/5 hover:bg-cyan-accent hover:text-black text-white text-[10px] font-heading font-bold tracking-widest transition-all h-10 gap-2"
                   >
                     Open Editor

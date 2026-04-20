@@ -36,6 +36,11 @@ export const resumeService = {
     return response.data;
   },
 
+  getTrackedJob: async (jobId: string): Promise<any> => {
+    const response = await api.get<any>(`/jobs/track/${jobId}`);
+    return response.data;
+  },
+
   createTrackedJob: async (data: { user_id: string; company_name: string; job_title: string; job_description: string }): Promise<any> => {
     const response = await api.post<any>('/jobs/', data);
     return response.data;

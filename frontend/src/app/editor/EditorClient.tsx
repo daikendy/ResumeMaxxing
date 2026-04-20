@@ -54,7 +54,23 @@ export default function EditorClient({ jobId }: { jobId: string }) {
         console.error("Failed to fetch master profile:", err);
       }
     };
+
+    const fetchJobDetails = async () => {
+      if (!jobId || jobId === '1') return; // Skip for default/dummy
+      try {
+        const job = await resumeService.getTrackedJob(jobId);
+        if (job) {
+          setTargetJobTitle(job.job_title);
+          setTargetJobDescription(job.job_description || '');
+          console.log("📍 JOB DATA SYNCED:", job.job_title);
+        }
+      } catch (err) {
+        console.error("Failed to fetch job details:", err);
+      }
+    };
+
     fetchProfile();
+    fetchJobDetails();
   }, [jobId]);
 
   // Handle Dynamic @page Size for Print
