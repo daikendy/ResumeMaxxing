@@ -3,7 +3,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database import get_db, Base, engine
-from routers import resume_router, user_router, job_router
+from routers import resume_router, user_router, job_router, webhook_router
 from fastapi.middleware.cors import CORSMiddleware
 import models
 
@@ -50,6 +50,7 @@ app.add_middleware(
 app.include_router(resume_router.router)
 app.include_router(user_router.router)
 app.include_router(job_router.router)
+app.include_router(webhook_router.router)
 
 @app.get("/")
 def read_root():

@@ -18,3 +18,12 @@ def create_user(db: Session, user: UserCreate):
     db.commit()
     db.refresh(db_user) # Refreshes to get the auto-generated created_at timestamp
     return db_user
+
+# Delete
+def delete_user(db: Session, user_id: str):
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if db_user:
+        db.delete(db_user)
+        db.commit()
+        return True
+    return False

@@ -21,8 +21,10 @@ import {
   LucideFileText,
   LucideX,
   LucideAlertCircle,
-  LucideTrash2
+  LucideTrash2,
+  LucideSettings
 } from 'lucide-react';
+import Link from 'next/link';
 
 interface TrackedJob {
   id: number;
@@ -252,6 +254,15 @@ export default function DashboardPage() {
               <LucidePlusCircle className="w-4 h-4 mr-2" />
               New Track +
             </Button>
+
+            <Link href="/settings">
+              <Button 
+                variant="ghost"
+                className="w-12 h-12 p-0 bg-white/5 border border-white/10 text-white/40 hover:text-cyan-accent hover:bg-white/10 transition-all rounded-none"
+              >
+                <LucideSettings className="w-4 h-4" />
+              </Button>
+            </Link>
           </div>
         </div>
 
