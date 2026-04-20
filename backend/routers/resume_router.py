@@ -11,14 +11,16 @@ from auth_utils import get_current_user, sync_user_to_db
 
 router = APIRouter(prefix="/resumes", tags=["Resumes"])
 
+from utils.exceptions import QuotaExceededException
+
 @router.post("/generate", response_model=ResumeResponse)
 async def generate_tailored_resume(payload: ResumeCreate, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     
     # 1. Ensure User is synced
     user = sync_user_to_db(current_user, db)
-        
+         
     if user.generations_used >= user.generations_limit:
-        raise HTTPException(status_code=403, detail="Quota exceeded. Upgrade to Premium.")
+        raise QuotaExceededException()
 
     # 2. Fetch the Job Description
     job = db.query(TrackedJob).filter(TrackedJob.id == payload.tracked_job_id).first()

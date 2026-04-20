@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { resumeService } from '@/lib/api/services/resumeService';
 import { AuthGuard } from '@/components/AuthGuard';
+import { PremiumModal } from '@/components/PremiumModal';
 import {
   LucidePlus,
   LucideTerminal,
@@ -50,6 +51,8 @@ export default function DashboardPage() {
     job_description: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
+  const [errorDetails, setErrorDetails] = useState<{title: string, message: string} | null>(null);
 
   useEffect(() => {
     if (isLoaded) {
@@ -108,7 +111,18 @@ export default function DashboardPage() {
       const response = await resumeService.createTrackedJob(newJob, token);
       router.push(`/editor?jobId=${response.id}`);
     } catch (err: any) {
-      setError(err.message || "System glitch. Please try again in a moment.");
+      const apiError = err.response?.data;
+      if (apiError && apiError.code === 'LIMIT_REACHED') {
+        setIsPremiumModalOpen(true);
+        setIsModalOpen(false); // Close the small form modal
+        setErrorDetails({
+          title: "RESOURCE LIMIT REACHED",
+          message: apiError.message || "Upgrade to Pro to track more opportunities.",
+          code: apiError.code
+        });
+      } else {
+        setError(err.message || "System glitch. Please try again in a moment.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -357,6 +371,14 @@ export default function DashboardPage() {
           TOTAL_TRACKS_SAVED: {jobs.length} / 03
         </div>
       </footer>
+
+      <PremiumModal 
+        isOpen={isPremiumModalOpen} 
+        onClose={() => setIsPremiumModalOpen(false)}
+        title={errorDetails?.title}
+        description={errorDetails?.message}
+        errorCode={errorDetails?.code}
+      />
     </div>
     </AuthGuard>
   );

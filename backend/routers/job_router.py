@@ -24,6 +24,8 @@ def get_job_by_id(job_id: int, current_user: dict = Depends(get_current_user), d
         raise HTTPException(status_code=404, detail="Job track not found or unauthorized access")
     return job
 
+from utils.exceptions import LimitReachedException
+
 @router.post("/", response_model=JobResponse)
 def create_job(payload: JobCreate, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     """Create a new job for the user, syncing their record and enforcing limits."""
@@ -33,10 +35,7 @@ def create_job(payload: JobCreate, current_user: dict = Depends(get_current_user
     # 1. Enforce the V1 Limit
     job_count = db.query(TrackedJob).filter(TrackedJob.user_id == user_id).count()
     if job_count >= 3:
-        raise HTTPException(
-            status_code=403, 
-            detail="FREE TIER LIMIT: You have reached the maximum of 3 tracked jobs. Please upgrade to Pro for unlimited tracks."
-        )
+        raise LimitReachedException("FREE TIER LIMIT: You have reached the maximum of 3 tracked jobs. Please upgrade to Pro for unlimited tracks.")
     
     # 2. Create the job
     db_job = TrackedJob(

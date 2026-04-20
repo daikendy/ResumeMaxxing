@@ -10,11 +10,26 @@ import models
 # Create the database tables if they don't already exist
 Base.metadata.create_all(bind=engine)
 
+from fastapi.responses import JSONResponse
+from utils.exceptions import ResumeMaxxingException
+
 app = FastAPI(
     title="ResumeMaxxing API",
     description="The backend API for ResumeMaxxing SaaS",
     version="0.1.0"
 )
+
+@app.exception_handler(ResumeMaxxingException)
+async def resume_maxxing_exception_handler(request, exc: ResumeMaxxingException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "status": "error",
+            "code": exc.code,
+            "message": exc.message,
+            "details": exc.details
+        }
+    )
 
 MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
 

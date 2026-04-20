@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,22 +11,25 @@ import { resumeService } from '@/lib/api/services/resumeService';
 import { ResumeResponse } from '@/lib/api/types/resume';
 import { calculateMatchScore } from '@/lib/utils/keywordMatcher';
 import { AuthGuard } from '@/components/AuthGuard';
-
-import {
-  LucideTerminal,
-  LucideCheck,
-  LucideZap,
-  LucideChevronLeft,
-  LucideDatabase,
-  LucideLayers3,
-  LucideCpu,
-  LucideCircleDashed,
-  LucideBriefcase,
-  LucideGraduationCap,
-  LucideFolderGit2,
-  LucideChevronDown,
-  LucideChevronUp,
-  LucideDownload
+import { useResumeStack } from '@/hooks/useResumeStack';
+import { PremiumModal } from '@/components/PremiumModal';
+import { 
+  LucideTerminal, 
+  LucideCheck, 
+  LucideZap, 
+  LucideChevronLeft, 
+  LucideDatabase, 
+  LucideLayers3, 
+  LucideCpu, 
+  LucideCircleDashed, 
+  LucideBriefcase, 
+  LucideGraduationCap, 
+  LucideFolderGit2, 
+  LucideChevronDown, 
+  LucideChevronUp, 
+  LucideDownload,
+  LucideUndo2,
+  LucideRedo2
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -37,7 +40,11 @@ export default function EditorClient({ jobId }: { jobId: string }) {
   const [targetJobTitle, setTargetJobTitle] = useState('');
   const [targetJobDescription, setTargetJobDescription] = useState('');
   const [status, setStatus] = useState<EditorState>('idle');
-  const [resumeData, setResumeData] = useState<ResumeResponse | null>(null);
+  
+  // History Engine
+  const stack = useResumeStack<ResumeResponse>(null);
+  const resumeData = stack.present;
+
   const [matchScore, setMatchScore] = useState<number | null>(null);
   const [originalScore, setOriginalScore] = useState<number | null>(null);
   const [masterProfile, setMasterProfile] = useState<any | null>(null);
@@ -45,6 +52,8 @@ export default function EditorClient({ jobId }: { jobId: string }) {
   const [showAllSkills, setShowAllSkills] = useState(false);
   const [isSidebarHidden, setIsSidebarHidden] = useState(false);
   const [pageSize, setPageSize] = useState<'A4' | 'LETTER'>('A4');
+  const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
+  const [errorDetails, setErrorDetails] = useState<{title: string, message: string} | null>(null);
 
   // Fetch real master profile on mount
   useEffect(() => {
@@ -75,7 +84,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
               const activeVersion = job.resume_versions.find((v: any) => v.is_active) || job.resume_versions[0];
               
               if (activeVersion && activeVersion.resume_content) {
-                setResumeData(activeVersion);
+                stack.initialize(activeVersion);
                 
                 // Recalculate scores for current view consistency
                 if (profile && profile.resume_data) {
@@ -126,7 +135,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
     if (!targetJobTitle || !targetJobDescription) return;
 
     setStatus('loading');
-    setResumeData(null);
+    // We don't clear stack.present here, just set status
 
     try {
       console.log("🚀 GENERATION START", {
@@ -148,7 +157,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
       }, token);
 
       console.log("✅ AI RESPONSE RECEIVED:", response.resume_content);
-      setResumeData(response);
+      stack.set(response);
 
       // Calculate Before vs After
       const baseScore = calculateMatchScore(targetJobDescription, masterProfile);
@@ -159,11 +168,54 @@ export default function EditorClient({ jobId }: { jobId: string }) {
 
       setStatus('success');
       setIsSidebarHidden(true); // Auto-hide sidebar on success
-    } catch (error) {
-      console.error(error);
-      setStatus('error');
+    } catch (error: any) {
+      console.error("❌ GENERATION ERROR:", error);
+      
+      const apiError = error.response?.data;
+      if (apiError && (apiError.code === 'QUOTA_EXCEEDED' || apiError.code === 'LIMIT_REACHED')) {
+        setErrorDetails({
+          title: apiError.code === 'QUOTA_EXCEEDED' ? "QUOTA EXCEEDED" : "LIMIT REACHED",
+          message: apiError.message || "Upgrade required for more capacity.",
+          code: apiError.code
+        });
+        setIsPremiumModalOpen(true);
+        setStatus('idle'); // Reset status so user can try again after upgrade
+      } else {
+        setStatus('error');
+      }
     }
   };
+  
+  // Handle Manual Edits to the JSON content
+  const handleUpdateContent = useCallback((newContent: any) => {
+    if (!resumeData) return;
+    stack.set({
+      ...resumeData,
+      resume_content: newContent
+    });
+    
+    // Recalculate scores for the new manual content
+    if (masterProfile) {
+      const optimizedScore = calculateMatchScore(targetJobDescription, newContent);
+      setMatchScore(optimizedScore);
+    }
+  }, [resumeData, stack, targetJobDescription, masterProfile]);
+
+  // Keyboard Shortcuts for Undo/Redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        stack.undo();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+        e.preventDefault();
+        stack.redo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [stack]);
 
 
 
@@ -350,17 +402,6 @@ export default function EditorClient({ jobId }: { jobId: string }) {
             )}
           </Button>
 
-          {/* Print / Save as PDF Button */}
-          {status === 'success' && resumeData && (
-            <Button
-              className="print:hidden no-print w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-sm h-12 text-xs uppercase tracking-[0.2em] font-bold transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.15)] flex items-center justify-center gap-2 group"
-              onClick={() => window.print()}
-            >
-              <LucideDownload className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />
-              Save as PDF
-            </Button>
-          )}
-
           {status === 'error' && (
             <p className="text-rose-400 text-[10px] mt-4 text-center font-mono uppercase tracking-widest">Protocol Failure: Backend Connection Lost</p>
           )}
@@ -368,24 +409,73 @@ export default function EditorClient({ jobId }: { jobId: string }) {
       </div>
       )}
 
-      {/* RIGHT COLUMN: The Design Canvas */}
-      <div className={`print-path print:p-0 flex-grow h-full bg-[#111111] print:bg-white p-4 sm:p-6 md:p-10 lg:p-16 xl:p-24 overflow-y-auto flex flex-col items-center custom-scrollbar relative ${isSidebarHidden ? 'w-full' : 'w-auto'}`}>
+      {/* RIGHT COLUMN: The Design Canvas Area */}
+      <div className={`print-path print:p-0 flex-grow h-full bg-[#111111] print:bg-white flex flex-col overflow-hidden relative ${isSidebarHidden ? 'w-full' : 'w-auto'}`}>
         
-        {/* Toggle Sidebar Button (Persistent) */}
-        <button 
-          onClick={() => setIsSidebarHidden(!isSidebarHidden)}
-          className="no-print absolute top-12 left-8 z-50 p-3 bg-zinc-900/90 backdrop-blur-md border border-zinc-800 text-zinc-400 hover:text-white rounded-sm flex items-center gap-3 transition-all duration-300 hover:bg-zinc-800 group shadow-xl active:scale-95"
-          title={isSidebarHidden ? "Open Design Studio" : "Full Focus View"}
-        >
-          <LucideTerminal className={`w-4 h-4 ${isSidebarHidden ? 'text-zinc-500' : 'text-cyan-accent'} group-hover:scale-110 transition-transform duration-300`} />
-          {isSidebarHidden && (
-            <span className="text-[10px] uppercase tracking-[0.2em] font-bold animate-in fade-in slide-in-from-left-2 duration-300">Open Design Studio</span>
-          )}
-        </button>
+        {/* PERSISTENT CONTROL DOCK: Stays in one place, doesn't block scroll */}
+        <div className="no-print h-16 bg-zinc-950/60 backdrop-blur-md border-b border-zinc-900 flex items-center justify-between px-6 flex-shrink-0 z-50">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsSidebarHidden(!isSidebarHidden)}
+              className="p-2.5 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white rounded-sm flex items-center gap-2 transition-all duration-300 hover:bg-zinc-800 group shadow-lg active:scale-95"
+              title={isSidebarHidden ? "Open Design Studio" : "Full Focus View"}
+            >
+              <LucideTerminal className={`w-3.5 h-3.5 ${isSidebarHidden ? 'text-zinc-500' : 'text-cyan-accent'} group-hover:scale-110 transition-transform`} />
+              <span className="text-[9px] uppercase tracking-[0.2em] font-bold hidden sm:block">
+                {isSidebarHidden ? 'Design Studio' : 'Focus Mode'}
+              </span>
+            </button>
 
-        {/* Subtle Canvas Pattern Overlay */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
-          style={{ backgroundImage: 'radial-gradient(#ffffff 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }}></div>
+            {status === 'success' && resumeData && (
+              <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-1 rounded-sm">
+                <button
+                  onClick={stack.undo}
+                  disabled={!stack.canUndo}
+                  className={`p-2 transition-all rounded-sm ${stack.canUndo ? 'text-cyan-accent hover:bg-zinc-800 hover:text-white' : 'text-zinc-700 cursor-not-allowed opacity-20'}`}
+                  title="Undo (Ctrl+Z)"
+                >
+                  <LucideUndo2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={stack.redo}
+                  disabled={!stack.canRedo}
+                  className={`p-2 transition-all rounded-sm ${stack.canRedo ? 'text-cyan-accent hover:bg-zinc-800 hover:text-white' : 'text-zinc-700 cursor-not-allowed opacity-20'}`}
+                  title="Redo (Ctrl+Y)"
+                >
+                  <LucideRedo2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-4">
+             {status === 'success' && resumeData && (
+               <div className="hidden lg:flex items-center gap-2 text-[9px] font-mono text-zinc-500 uppercase tracking-widest border-r border-zinc-800 pr-4">
+                 <span className="opacity-30">Stack:</span>
+                 <span className={stack.past.length > 0 ? "text-cyan-accent" : ""}>{stack.past.length}</span>
+                 <span className="opacity-30">/</span>
+                 <span className={stack.future.length > 0 ? "text-cyan-accent" : ""}>{stack.future.length}</span>
+               </div>
+             )}
+
+             {status === 'success' && resumeData && (
+              <Button
+                className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-none h-10 px-6 text-[10px] uppercase tracking-[0.2em] font-bold transition-all shadow-[0_0_20px_rgba(16,185,129,0.1)] flex items-center gap-2 group border-none"
+                onClick={() => window.print()}
+              >
+                <LucideDownload className="w-3.5 h-3.5 group-hover:translate-y-0.5 transition-transform" />
+                Export PDF
+              </Button>
+             )}
+          </div>
+        </div>
+
+        {/* SCROLLABLE CANVAS VIEWPORT */}
+        <div className="flex-grow overflow-y-auto custom-scrollbar flex flex-col items-center p-4 sm:p-6 md:p-10 lg:p-16 xl:p-20 relative bg-zinc-950/40">
+          {/* Subtle Canvas Pattern Overlay */}
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+            style={{ backgroundImage: 'radial-gradient(#ffffff 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }}></div>
+
 
         {/* ============================================= */}
         {/* HUD: OUTSIDE the A4 paper, on dark background */}
@@ -505,7 +595,16 @@ export default function EditorClient({ jobId }: { jobId: string }) {
 
                 {/* 1. Header & Contact */}
                 <div className="text-center space-y-0.5">
-                  <h1 className="text-2xl font-bold tracking-tight text-zinc-900 border-b-2 border-zinc-900 inline-block px-3 pb-1" style={{ fontFamily: "'Georgia', serif" }}>
+                  <h1 
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => {
+                      const newContent = { ...resumeData.resume_content, contact: { ...resumeData.resume_content.contact, name: e.currentTarget.innerText } };
+                      handleUpdateContent(newContent);
+                    }}
+                    className="text-2xl font-bold tracking-tight text-zinc-900 border-b-2 border-zinc-900 inline-block px-3 pb-1 outline-none hover:bg-zinc-50 transition-colors focus:bg-zinc-50 focus:border-cyan-accent" 
+                    style={{ fontFamily: "'Georgia', serif" }}
+                  >
                     {resumeData.resume_content.contact?.name || "Candidate Name"}
                   </h1>
                   <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[9px] uppercase tracking-wider font-sans font-bold text-zinc-500 pt-1">
@@ -527,7 +626,15 @@ export default function EditorClient({ jobId }: { jobId: string }) {
                 {/* 1.5 Professional Summary */}
                 {resumeData.resume_content.summary && (
                   <div className="pt-2">
-                    <p className="text-[11px] leading-relaxed text-zinc-700 text-center mx-auto max-w-[90%]">
+                    <p 
+                      contentEditable
+                      suppressContentEditableWarning
+                      onBlur={(e) => {
+                        const newContent = { ...resumeData.resume_content, summary: e.currentTarget.innerText };
+                        handleUpdateContent(newContent);
+                      }}
+                      className="text-[11px] leading-relaxed text-zinc-700 text-center mx-auto max-w-[90%] outline-none hover:bg-zinc-50 transition-colors focus:bg-zinc-50 rounded-sm p-1"
+                    >
                       {resumeData.resume_content.summary}
                     </p>
                   </div>
@@ -559,7 +666,22 @@ export default function EditorClient({ jobId }: { jobId: string }) {
                         )}
                         <ul className="list-disc pl-4 space-y-0.5 marker:text-zinc-300 mt-1">
                           {exp.bullets?.map((b: string, bi: number) => (
-                            <li key={bi} className="text-[11px] leading-snug text-zinc-700 pl-1">{formatBullet(b)}</li>
+                            <li 
+                              key={bi} 
+                              contentEditable
+                              suppressContentEditableWarning
+                              onBlur={(e) => {
+                                const newBullets = [...exp.bullets];
+                                newBullets[bi] = e.currentTarget.innerText;
+                                const newExperience = [...resumeData.resume_content.experience];
+                                newExperience[i] = { ...exp, bullets: newBullets };
+                                const newContent = { ...resumeData.resume_content, experience: newExperience };
+                                handleUpdateContent(newContent);
+                              }}
+                              className="text-[11px] leading-snug text-zinc-700 pl-1 outline-none hover:bg-zinc-50 transition-colors focus:bg-zinc-50 rounded-sm"
+                            >
+                              {formatBullet(b)}
+                            </li>
                           ))}
                         </ul>
                       </div>
@@ -649,7 +771,15 @@ export default function EditorClient({ jobId }: { jobId: string }) {
 
         </div>
       </div>
-    </div>
+      </div>
+      </div>
+      <PremiumModal 
+        isOpen={isPremiumModalOpen} 
+        onClose={() => setIsPremiumModalOpen(false)}
+        title={errorDetails?.title}
+        description={errorDetails?.message}
+        errorCode={errorDetails?.code}
+      />
     </AuthGuard>
   );
 }
