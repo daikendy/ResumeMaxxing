@@ -40,6 +40,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
   const [masterProfile, setMasterProfile] = useState<any | null>(null);
   const [showAllSkills, setShowAllSkills] = useState(false);
   const [isSidebarHidden, setIsSidebarHidden] = useState(false);
+  const [pageSize, setPageSize] = useState<'A4' | 'LETTER'>('A4');
 
   // Fetch real master profile on mount
   useEffect(() => {
@@ -55,6 +56,25 @@ export default function EditorClient({ jobId }: { jobId: string }) {
     };
     fetchProfile();
   }, [jobId]);
+
+  // Handle Dynamic @page Size for Print
+  useEffect(() => {
+    const styleId = 'dynamic-page-size';
+    let style = document.getElementById(styleId);
+    if (!style) {
+      style = document.createElement('style');
+      style.id = styleId;
+      document.head.appendChild(style);
+    }
+    style.innerHTML = `
+      @media print {
+        @page {
+          size: ${pageSize === 'A4' ? 'A4' : '8.5in 11in'} portrait !important;
+          margin: 0 !important;
+        }
+      }
+    `;
+  }, [pageSize]);
 
   const handleGenerate = async () => {
     if (!targetJobTitle || !targetJobDescription) return;
@@ -100,7 +120,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
 
 
   return (
-    <div className="print-path flex flex-col md:flex-row h-screen w-full bg-[#f4f4f5] overflow-hidden font-sans relative">
+    <div className="print-path flex flex-col md:flex-row h-screen w-full bg-[#f4f4f5] overflow-hidden font-sans relative overflow-x-hidden">
       {/* LEFT COLUMN: The Design Studio Controls */}
       {!isSidebarHidden && (
         <div className="print:hidden w-full md:w-[40%] lg:w-[32%] xl:w-[28%] h-full bg-zinc-950 text-zinc-50 flex flex-col pt-6 pb-8 px-6 md:px-10 overflow-y-auto border-r border-zinc-900 shadow-2xl relative z-20">
@@ -237,6 +257,26 @@ export default function EditorClient({ jobId }: { jobId: string }) {
           </div>
         </div>
 
+        {/* Page Architecture Controls */}
+        <div className="py-6 border-t border-zinc-900 space-y-4">
+          <label className="text-[10px] uppercase tracking-widest font-bold text-zinc-500">Page Architecture</label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setPageSize('A4')}
+              className={`h-10 text-[10px] uppercase tracking-widest font-mono border transition-all duration-300 ${pageSize === 'A4' ? 'bg-zinc-100 text-zinc-950 border-white' : 'bg-transparent text-zinc-600 border-zinc-800 hover:border-zinc-700'}`}
+            >
+              A4 (Metric)
+            </button>
+            <button
+              onClick={() => setPageSize('LETTER')}
+              className={`h-10 text-[10px] uppercase tracking-widest font-mono border transition-all duration-300 ${pageSize === 'LETTER' ? 'bg-zinc-100 text-zinc-950 border-white' : 'bg-transparent text-zinc-600 border-zinc-800 hover:border-zinc-700'}`}
+            >
+              Letter (US)
+            </button>
+          </div>
+          <p className="text-[8px] text-zinc-700 font-mono italic">Dimensions: {pageSize === 'A4' ? '210mm × 297mm' : '8.5in × 11in'}</p>
+        </div>
+
         <div className="pt-6 mt-auto space-y-3">
           <Button
             className="w-full bg-zinc-50 hover:bg-white text-zinc-950 rounded-sm h-14 text-xs uppercase tracking-[0.2em] font-bold transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.05)] flex items-center justify-center gap-2 group"
@@ -362,7 +402,10 @@ export default function EditorClient({ jobId }: { jobId: string }) {
         )}
 
         {/* A4 PAPER CONTAINER: Clean resume data ONLY */}
-        <div id="printable-resume-mount" className="print:shadow-none print:border-none print:m-0 print:p-0 a4-paper w-full max-w-[850px] min-h-[1100px] print:min-h-0 bg-white shadow-[0_30px_90px_rgba(0,0,0,0.15)] rounded-sm border border-zinc-300 px-8 md:px-12 py-8 md:py-12 relative transition-all duration-700 flex flex-col">
+        <div 
+          id="printable-resume-mount" 
+          className={`print:shadow-none print:border-none print:p-[6mm] a4-paper bg-white shadow-[0_30px_90px_rgba(0,0,0,0.15)] rounded-sm border border-zinc-300 px-4 md:px-6 py-4 md:py-6 relative transition-all duration-700 flex flex-col ${pageSize === 'LETTER' ? 'w-full max-w-[816px] min-h-[1056px] size-letter' : 'w-full max-w-[850px] min-h-[1100px] size-a4'}`}
+        >
 
           {/* Aesthetic Paper Texture Overlay */}
           <div className="absolute inset-0 opacity-[0.02] pointer-events-none mix-blend-multiply rounded-sm"
