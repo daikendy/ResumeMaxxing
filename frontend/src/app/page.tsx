@@ -19,11 +19,11 @@ export default function Home() {
     <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans overflow-x-hidden">
       
       {/* HERO SECTION */}
-      <section className="relative pt-24 pb-20 md:pt-40 md:pb-32 px-6 overflow-hidden">
+      <section className="relative min-h-[90vh] flex flex-col items-center justify-center pt-24 pb-20 px-6 overflow-hidden">
         {/* Background Accents */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-accent/5 rounded-full blur-[120px] pointer-events-none" />
         
-        <div className="max-w-5xl mx-auto text-center relative z-10">
+        <div className="max-w-5xl mx-auto text-center relative z-10 w-full">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-accent opacity-75"></span>
@@ -32,16 +32,16 @@ export default function Home() {
             <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/60">System Online: v1.0 Production</span>
           </div>
 
-          <h1 className="text-4xl md:text-7xl lg:text-8xl font-heading text-white tracking-tighter uppercase leading-[0.9] mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-heading text-white tracking-tighter uppercase leading-[0.85] mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
             Stop guessing.<br />
             Start <span className="text-cyan-accent cyan-glow italic">winning.</span>
           </h1>
 
-          <p className="max-w-2xl mx-auto text-sm md:text-lg font-mono text-white/40 uppercase tracking-widest leading-relaxed mb-12 animate-in fade-in slide-in-from-bottom-12 duration-700">
+          <p className="max-w-2xl mx-auto text-sm md:text-lg font-mono text-white/40 uppercase tracking-[0.2em] leading-relaxed mb-12 animate-in fade-in slide-in-from-bottom-12 duration-700">
             The AI Resume Architect built for engineers. engineered for results. zero jargon. total precision. 
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-in fade-in slide-in-from-bottom-16 duration-700">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 w-full animate-in fade-in slide-in-from-bottom-16 duration-700">
             <SignedOut>
               <SignInButton mode="modal">
                 <Button className="w-full sm:w-auto h-16 px-12 bg-cyan-accent text-black hover:bg-white uppercase font-heading font-bold tracking-[0.2em] text-sm transition-all shadow-[0_0_30px_rgba(0,240,255,0.2)]">
@@ -58,7 +58,7 @@ export default function Home() {
               </Link>
             </SignedIn>
 
-            <Link href="#features" className="w-full sm:w-auto group">
+            <Link href="#features" className="w-full sm:w-auto group hidden md:flex items-center justify-center">
               <span className="text-[10px] uppercase font-bold tracking-[0.3em] text-white/40 hover:text-white transition-colors flex items-center gap-3">
                 How it works <LucideArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
               </span>
@@ -67,8 +67,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FEATURE GRID */}
-      <section id="features" className="py-24 px-6 border-t border-white/5 relative z-10">
+      {/* FEATURE GRID - HIDDEN ON MOBILE FOR NATIVE FEEL */}
+      <section id="features" className="hidden md:block py-24 px-6 border-t border-white/5 relative z-10">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Feature 1 */}
@@ -107,22 +107,22 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CALL TO ACTION */}
-      <section className="py-32 px-6 text-center border-t border-white/5">
+      {/* CALL TO ACTION - MOBILE NATIVE VERSION */}
+      <section className="py-20 md:py-32 px-6 text-center border-t border-white/5">
         <div className="max-w-2xl mx-auto space-y-12">
           <h2 className="text-3xl md:text-5xl font-heading text-white tracking-tighter uppercase leading-[0.9]">
             Ready to <span className="text-cyan-accent">Scale?</span>
           </h2>
           <SignedOut>
             <SignInButton mode="modal">
-              <Button className="h-16 px-16 bg-white text-black hover:bg-cyan-accent uppercase font-heading font-bold tracking-[0.2em] text-sm transition-all">
+              <Button className="w-full md:w-auto h-16 px-16 bg-white text-black hover:bg-cyan-accent uppercase font-heading font-bold tracking-[0.2em] text-sm transition-all">
                 Create Account
               </Button>
             </SignInButton>
           </SignedOut>
           <SignedIn>
-            <Link href="/dashboard">
-              <Button className="h-16 px-16 bg-white text-black hover:bg-cyan-accent uppercase font-heading font-bold tracking-[0.2em] text-sm transition-all">
+            <Link href="/dashboard" className="w-full md:w-auto">
+              <Button className="w-full md:w-auto h-16 px-16 bg-white text-black hover:bg-cyan-accent uppercase font-heading font-bold tracking-[0.2em] text-sm transition-all">
                 Return to Dashboard
               </Button>
             </Link>

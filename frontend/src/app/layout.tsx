@@ -3,6 +3,7 @@
 import "./globals.css";
 
 import { ClerkProvider } from "@clerk/clerk-react";
+import { dark } from "@clerk/themes";
 import Navbar from "@/components/Navbar";
 
 const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -17,7 +18,24 @@ export default function RootLayout({
   }
 
   return (
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY!}>
+    <ClerkProvider 
+      publishableKey={PUBLISHABLE_KEY!}
+      appearance={{
+        baseTheme: dark,
+        variables: {
+          colorPrimary: "#00f0ff",
+          colorBackground: "#09090b", // zinc-950
+          colorInputBackground: "#18181b", // zinc-900
+          colorInputText: "#ffffff",
+          borderRadius: "0px",
+        },
+        elements: {
+          card: "border border-white/10 shadow-[0_0_50px_rgba(0,240,255,0.05)]",
+          formButtonPrimary: "bg-cyan-accent text-black hover:bg-white uppercase tracking-tighter font-bold",
+          footerActionLink: "text-cyan-accent hover:text-white",
+        }
+      }}
+    >
       <html
         lang="en"
         className="h-full antialiased dark"
