@@ -9,7 +9,28 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { resumeService } from '@/lib/api/services/resumeService';
 import { AuthGuard } from '@/components/AuthGuard';
-import { LucideUpload, LucidePlus, LucideTrash2, LucideCheck, LucideTerminal, LucideUser, LucideBriefcase, LucideGraduationCap, LucideCpu, LucideFolderGit2, LucideCloudCheck, LucideArrowRight, LucideFileText, LucideEye, LucideX, LucideAlertTriangle, LucideLayoutDashboard } from 'lucide-react';
+import { 
+  LucideUpload, 
+  LucidePlus, 
+  LucideTrash2, 
+  LucideCheck, 
+  LucideTerminal, 
+  LucideUser, 
+  LucideBriefcase, 
+  LucideGraduationCap, 
+  LucideCpu, 
+  LucideFolderGit2, 
+  LucideCloudCheck, 
+  LucideArrowRight, 
+  LucideFileText, 
+  LucideEye, 
+  LucideX, 
+  LucideAlertTriangle, 
+  LucideLayoutDashboard,
+  LucideSave,
+  LucideHistory,
+  LucideRotateCcw 
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertDialog,
@@ -188,6 +209,19 @@ export default function MasterResumePage() {
       setErrorMsg(err.message || 'Detection failed. Please check the PDF format.');
       setStatus('idle');
     }
+  };
+
+  const handleReset = () => {
+    setContact({ name: '', email: '', phone: '', github: '', linkedin: '' });
+    setSummary('');
+    setExperience([]);
+    setEducation([]);
+    setSkills([]);
+    setProjects([]);
+    setErrorMsg('');
+    setSaveSuccess(false);
+    playHaptic(ImpactStyle.Heavy);
+    toast.info("BUFFER_CLEARED");
   };
 
   const handleSave = async () => {
@@ -568,7 +602,32 @@ export default function MasterResumePage() {
             <Button onClick={handleSave} disabled={status === 'saving' || !hasChanges} className={`w-full h-16 uppercase font-heading tracking-widest text-[10px] font-bold border transition-all ${hasChanges ? 'bg-white text-black hover:bg-cyan-accent' : 'bg-white/5 text-white/20 cursor-not-allowed'}`}>
                {status === 'saving' ? 'Committing...' : hasChanges ? 'Commit Changes' : 'Stable'}
             </Button>
-            <Button onClick={() => router.push('/dashboard')} variant="ghost" className="w-full text-white/20 hover:text-white uppercase font-heading tracking-widest text-[9px]"><LucideLayoutDashboard className="w-3 h-3 mr-2" /> Back to Dashboard</Button>
+            <Button onClick={() => router.push('/dashboard')} variant="ghost" className="w-full text-white/20 hover:text-white uppercase font-heading tracking-widest text-[9px] mb-2"><LucideLayoutDashboard className="w-3 h-3 mr-2" /> Back to Dashboard</Button>
+
+            <AlertDialog>
+               <AlertDialogTrigger 
+                  render={
+                    <Button variant="ghost" className="w-full text-white/5 hover:text-red-500/60 uppercase font-heading tracking-widest text-[9px] transition-colors">
+                      <LucideRotateCcw className="w-3 h-3 mr-2" /> Reset Local Buffer
+                    </Button>
+                  }
+               />
+               <AlertDialogContent className="bg-zinc-950 border-white/10 text-white font-sans">
+                  <AlertDialogHeader>
+                     <AlertDialogTitle className="font-heading tracking-widest uppercase text-amber-500 flex items-center gap-2 text-sm">
+                        <LucideAlertTriangle className="w-4 h-4" />
+                        Hard Reset Warning
+                     </AlertDialogTitle>
+                     <AlertDialogDescription className="text-white/40 text-[11px] uppercase tracking-wide font-mono leading-relaxed">
+                        This action will clear your current local session data. You will lose all unsaved progress. This cannot be undone.
+                     </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="mt-6">
+                     <AlertDialogCancel className="bg-white/5 border-white/10 text-white/40 hover:bg-white/10 hover:text-white uppercase font-heading tracking-widest text-[9px]">Cancel</AlertDialogCancel>
+                     <AlertDialogAction onClick={handleReset} className="bg-red-600/20 text-red-500 border border-red-500/30 hover:bg-red-600 hover:text-white uppercase font-heading tracking-widest text-[9px]">Confirm Reset</AlertDialogAction>
+                  </AlertDialogFooter>
+               </AlertDialogContent>
+            </AlertDialog>
           </div>
         </aside>
 
