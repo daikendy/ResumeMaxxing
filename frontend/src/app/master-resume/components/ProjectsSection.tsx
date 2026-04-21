@@ -35,7 +35,7 @@ const ProjectsSection = React.memo(({
       <div className="flex items-center justify-between">
         <div className="flex items-baseline gap-4">
           <span className="text-4xl font-heading text-white/5 italic">06</span>
-          <h2 className="text-xl font-heading text-white tracking-widest uppercase">Key Projects</h2>
+          <h2 className="text-xl font-heading text-white tracking-widest uppercase">Projects</h2>
         </div>
         <Button variant="ghost" className="text-[10px] text-cyan-accent uppercase" onClick={addProject}>+ Add Project</Button>
       </div>

@@ -35,7 +35,7 @@ const ContactSection = React.memo(({
     <section id="contact" className="space-y-6">
       <div className="flex items-baseline gap-4">
         <span className="text-4xl font-heading text-white/5 italic">02</span>
-        <h2 className="text-xl font-heading text-white tracking-widest uppercase">Contact Details</h2>
+        <h2 className="text-xl font-heading text-white tracking-widest uppercase">Contact</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 border border-white/10 bg-black/40 backdrop-blur-sm">
         {fields.map(f => (

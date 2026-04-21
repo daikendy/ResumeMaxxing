@@ -19,7 +19,7 @@ const SummarySection = React.memo(({
     <section id="summary" className="space-y-6">
       <div className="flex items-baseline gap-4">
         <span className="text-4xl font-heading text-white/5 italic">01</span>
-        <h2 className="text-xl font-heading text-white tracking-widest uppercase">Bio Prototype</h2>
+        <h2 className="text-xl font-heading text-white tracking-widest uppercase">Summary</h2>
       </div>
       <div className="bg-black/40 border border-white/10 p-6">
         <TacticalTextarea

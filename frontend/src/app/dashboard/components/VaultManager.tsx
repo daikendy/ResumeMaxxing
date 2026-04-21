@@ -119,8 +119,8 @@ export default function VaultManager() {
             <LucideShieldCheck className="w-5 h-5 text-cyan-accent" />
           </div>
           <div className="flex flex-col">
-            <h3 className="text-xs font-heading font-black tracking-[0.3em] uppercase text-white">The_Vault</h3>
-            <span className="text-[8px] font-mono text-cyan-accent/60 uppercase">Snapshot Persistence Active</span>
+            <h3 className="text-xs font-heading font-black tracking-[0.3em] uppercase text-white">Resume Vault</h3>
+            <span className="text-[8px] font-mono text-cyan-accent/60 uppercase">Cloud Persistence Stable</span>
           </div>
         </div>
         {snapshots.length < 20 ? (
@@ -130,7 +130,7 @@ export default function VaultManager() {
             className="h-10 px-4 bg-cyan-accent text-black hover:bg-white text-[10px] font-heading font-bold tracking-widest transition-all active:scale-95 group/btn"
           >
             {isCapturing ? <LucideLoader2 className="w-4 h-4 animate-spin" /> : <LucidePlus className="w-4 h-4 mr-2" />}
-            SNAPSHOT_NOW
+            SAVE_SNAPSHOT
           </Button>
         ) : (
           <Button 

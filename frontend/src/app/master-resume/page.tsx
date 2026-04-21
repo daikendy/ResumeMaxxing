@@ -316,7 +316,7 @@ export default function MasterResumePage() {
             <aside className="lg:col-span-3 space-y-8">
                 <div className="lg:sticky lg:top-24 space-y-6">
                     <div className="hud-border p-6 relative overflow-hidden">
-                        <h3 className="text-[10px] font-heading text-cyan-accent mb-2 uppercase tracking-[0.2em] hud-text-glow">Detection_Lab</h3>
+                        <h3 className="text-[10px] font-heading text-cyan-accent mb-2 uppercase tracking-[0.2em] hud-text-glow">Import Data</h3>
                         <p className="text-[9px] text-white/40 mb-6 uppercase font-mono font-bold tracking-tighter">PDF_PARSER: ACTIVE</p>
                         <input type="file" accept=".pdf" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
                         <button onClick={() => fileInputRef.current?.click()} className="w-full h-32 border border-dashed border-white/20 hover:border-cyan-accent/50 hover:bg-cyan-muted transition-all relative group flex flex-col items-center justify-center">
@@ -350,7 +350,7 @@ export default function MasterResumePage() {
                 <div className="lg:sticky lg:top-24 space-y-6">
                     <div className={`hud-border p-6 transition-all ${hasChanges ? 'border-amber-500/20 bg-amber-500/5' : 'bg-cyan-accent/5'}`}>
                         <h3 className={`text-[10px] font-heading mb-4 uppercase tracking-widest ${hasChanges ? 'text-amber-500' : 'text-cyan-accent hud-text-glow'}`}>
-                            {hasChanges ? 'Buffer_Dirty' : 'Profile_Synced'}
+                            {hasChanges ? 'Unsaved Changes' : 'Profile Synced'}
                         </h3>
                         <p className="text-[9px] font-mono leading-relaxed text-white/40 uppercase">
                             Ready_for_Commit: {hasChanges ? 'TRUE' : 'FALSE'}<br />

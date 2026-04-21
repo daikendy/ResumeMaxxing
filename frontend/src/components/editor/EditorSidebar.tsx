@@ -39,7 +39,7 @@ export function EditorSidebar({ onGenerate }: EditorSidebarProps) {
             <div className="w-8 h-8 rounded-full bg-cyan-accent/10 flex items-center justify-center">
               <LucideLayers3 className="w-4 h-4 text-cyan-accent" />
             </div>
-            <h1 className="text-xl font-heading font-black tracking-[0.2em] uppercase text-white hud-text-glow">Editor_Studio</h1>
+            <h1 className="text-xl font-heading font-black tracking-[0.2em] uppercase text-white hud-text-glow">Editor Studio</h1>
           </div>
           <p className="text-white/40 text-[9px] font-mono leading-relaxed uppercase tracking-[0.2em]">Hardware: NODE_PRIME // ARCH: V2.2</p>
         </div>
@@ -49,7 +49,7 @@ export function EditorSidebar({ onGenerate }: EditorSidebarProps) {
         <div className="hud-border p-5 space-y-5 bg-cyan-accent/5">
           <div className="flex items-center justify-between pb-2 border-b border-white/5">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-[0.3em] font-black text-cyan-accent/60">Master_Archive</span>
+              <span className="text-[10px] uppercase tracking-[0.3em] font-black text-cyan-accent/60">Master Profile</span>
             </div>
           </div>
           
@@ -64,7 +64,7 @@ export function EditorSidebar({ onGenerate }: EditorSidebarProps) {
                 <div className="p-2 bg-black border border-white/5 text-center">
                   <div className="flex items-center justify-center gap-1.5 mb-1.5 opacity-20">
                     <LucideBriefcase className="w-2.5 h-2.5" />
-                    <span className="text-[7px] uppercase font-bold tracking-tighter text-white">XPR</span>
+                    <span className="text-[7px] uppercase font-bold tracking-tighter text-white">EXP</span>
                   </div>
                   <div className="text-xs font-mono font-black text-white">{store.masterProfile.experience?.length || 0}</div>
                 </div>
@@ -137,7 +137,7 @@ export function EditorSidebar({ onGenerate }: EditorSidebarProps) {
             onClick={onGenerate}
             disabled={store.status === 'loading'}
           >
-            {store.status === 'loading' ? 'PROCESSING...' : 'EXECUTE_OPTIMIZATION'}
+            {store.status === 'loading' ? 'PROCESSING...' : 'Optimize Resume'}
           </Button>
         </div>
       </div>

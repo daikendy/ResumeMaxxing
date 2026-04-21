@@ -135,11 +135,19 @@ async def create_vault_snapshot(request: Request, current_user: dict = Depends(g
     """Create a new vault snapshot from the current master resume."""
     user = await sync_user_to_db(current_user, db)
     
+    # 🕵️ Backend Limit Check (Hard Standard: 20)
+    current_snapshots = await vault_crud.get_snapshots(db, user.id)
+    if len(current_snapshots) >= 20:
+        raise HTTPException(
+            status_code=403, 
+            detail="VAULT_FULL: Clear archive or decommission versions to continue."
+        )
+
     # 1. Fetch current master
     result = await db.execute(select(MasterResume).filter(MasterResume.user_id == user.id))
     master = result.scalars().first()
     if not master:
-        raise HTTPException(status_code=404, detail="Master resume not found. Create one first.")
+        raise HTTPException(status_code=404, detail="MASTER_PROFILE_NOT_FOUND")
         
     # 2. AI Summarization for the name
     summary = await summarize_master_resume(master.resume_data)

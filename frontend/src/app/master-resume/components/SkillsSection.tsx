@@ -22,7 +22,7 @@ const SkillsSection = React.memo(({
       <div className="flex items-center justify-between">
         <div className="flex items-baseline gap-4">
           <span className="text-4xl font-heading text-white/5 italic">05</span>
-          <h2 className="text-xl font-heading text-white tracking-widest uppercase">Skills & Tools</h2>
+          <h2 className="text-xl font-heading text-white tracking-widest uppercase">Skills</h2>
         </div>
         <Button variant="ghost" className="text-[10px] text-cyan-accent uppercase" onClick={addSkill}>+ Add Skill</Button>
       </div>
