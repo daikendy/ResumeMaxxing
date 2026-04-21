@@ -11,7 +11,9 @@ export const LIMITS = {
   BULLET: 1000,
   PROJECT_DESC: 2000,
   PROJECT_TITLE: 200,
-  SKILL: 50
+  SKILL: 50,
+  URL: 500,
+  DESCRIPTION: 15000
 };
 
 export const playHaptic = async (style = ImpactStyle.Light) => {

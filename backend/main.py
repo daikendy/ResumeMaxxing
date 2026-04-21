@@ -8,6 +8,8 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from contextlib import asynccontextmanager
+
 # Local Imports
 import models
 from database import get_db
@@ -16,14 +18,33 @@ from utils.exceptions import ResumeMaxxingException
 from utils.logging_config import setup_logging, logger
 from utils.limiter import limiter
 from slowapi.errors import RateLimitExceeded
+from auth_utils import get_jwks
 
 # 📝 Initialize Logging
 setup_logging()
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    MODERN STARTUP: Pre-fetch JWKS keys and warm up the engine.
+    This replaces the deprecated @app.on_event("startup").
+    """
+    logger.info("SYSTEM_CORE_STARTUP", detail="Priming JWKS Cache...")
+    try:
+        await get_jwks(force_refresh=True)
+        logger.info("SYSTEM_CORE_READY", detail="JWKS Synchronized.")
+    except Exception as e:
+        logger.error("SYSTEM_BOOT_FAILURE", error=str(e))
+    
+    yield
+    
+    logger.info("SYSTEM_CORE_SHUTDOWN")
+
 app = FastAPI(
     title="ResumeMaxxing API",
     description="The backend API for ResumeMaxxing SaaS",
-    version="0.1.0"
+    version="0.1.0",
+    lifespan=lifespan
 )
 app.state.limiter = limiter
 
@@ -65,7 +86,20 @@ async def rate_limit_exception_handler(request: Request, exc: RateLimitExceeded)
         }
     )
 
-# 📡 TELEMETRY: Request/Response Logging Middleware
+# 📡 TELEMETRY & AUTH: Request Processing Pipeline
+@app.middleware("http")
+async def attach_user_to_state(request: Request, call_next):
+    """
+    Silent Auth Middleware: Extracts the Clerk User ID from the JWT
+    and attaches it to request.state.user_id for use in the Limiter.
+    """
+    from auth_utils import decode_token_silent
+    
+    auth_header = request.headers.get("Authorization")
+    request.state.user_id = await decode_token_silent(auth_header)
+    
+    return await call_next(request)
+
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start_time = time.time()
