@@ -24,44 +24,51 @@ export function EditorWorkspace() {
   }, [store.masterProfile, store.targetJobDescription]);
 
   return (
-    <div className="flex-grow flex flex-col items-center p-4 md:p-8 overflow-y-auto custom-scrollbar relative">
-      <div className="max-w-5xl w-full flex flex-col items-center">
+    <div className="flex-grow flex flex-col items-center p-4 md:p-8 overflow-y-auto custom-scrollbar relative bg-[#0a0a0a]">
+      {/* HUD Scanline specific to the preview area */}
+      <div className="absolute inset-0 pointer-events-none opacity-30 hud-scanline z-0" />
+      
+      <div className="max-w-5xl w-full flex flex-col items-center relative z-10">
         
-        {/* Match Score Overlay */}
+        {/* Match Score HUD Overlay */}
         {store.status === 'success' && matchScore > 0 && (
           <motion.div 
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-[850px] mb-8 glass-panel border-cyan-800/30 p-8 flex items-center justify-between relative overflow-hidden"
+            className="w-full max-w-[850px] mb-8 hud-border p-8 flex items-center justify-between relative overflow-hidden"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-transparent pointer-events-none" />
+            <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-cyan-accent/20" />
             <div className="relative z-10">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400 mb-1">Alignment Rating</h3>
-              <div className="text-6xl font-heading font-black text-white tracking-tighter">
-                {matchScore}<span className="text-2xl text-cyan-800">%</span>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-cyan-accent mb-1 hud-text-glow">Alignment_Rating</h3>
+              <div className="text-6xl font-heading font-black text-white tracking-tighter hud-text-glow">
+                {matchScore}<span className="text-2xl text-cyan-accent/40">%</span>
               </div>
             </div>
             
-            <div className="text-right">
-              <div className={`text-[10px] font-bold uppercase tracking-widest ${matchScore > originalScore ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                AI Boost: +{Math.max(0, matchScore - originalScore)}%
+            <div className="text-right relative z-10">
+              <div className={`text-[11px] font-mono font-bold uppercase tracking-widest ${matchScore > originalScore ? 'text-emerald-400' : 'text-white/20'}`}>
+                {matchScore > originalScore ? `AI_BOOST: +${matchScore - originalScore}%` : 'SCORE_NOMINAL'}
               </div>
+              <div className="text-[8px] text-white/20 font-mono mt-1 uppercase tracking-widest leading-none">Stream_Sync: 100%</div>
             </div>
           </motion.div>
         )}
 
         {/* The Paper Component (GPU Scaled) */}
         <div
-          className="relative flex-shrink-0 origin-top print:!transform-none print:!m-0"
+          className="relative flex-shrink-0 origin-top print:!transform-none print:!m-0 group"
           style={{ 
             transform: `scale(${store.zoomLevel})`, 
             marginBottom: `-${(1 - store.zoomLevel) * 1100}px`, 
             willChange: 'transform' 
           }}
         >
+          {/* Digital Projection Underglow */}
+          <div className="absolute -inset-10 bg-cyan-accent/10 blur-[80px] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+          
           <div 
             id="printable-resume-mount" 
-            className={`bg-white shadow-2xl p-[10mm] relative transition-all duration-300 ${store.pageSize === 'LETTER' ? 'size-letter' : 'size-a4'}`}
+            className={`bg-white shadow-[0_0_50px_rgba(0,0,0,0.5)] p-[10mm] relative transition-all duration-300 ${store.pageSize === 'LETTER' ? 'size-letter' : 'size-a4'} border-4 border-black`}
             style={{ 
               width: store.pageSize === 'A4' ? '794px' : '816px', 
               minHeight: store.pageSize === 'A4' ? '1123px' : '1056px' 

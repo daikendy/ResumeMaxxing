@@ -32,55 +32,55 @@ export function EditorSidebar({ onGenerate }: EditorSidebarProps) {
   if (store.isSidebarHidden) return null;
 
   return (
-    <aside className="print:hidden w-full md:w-[40%] lg:w-[32%] xl:w-[28%] h-full bg-zinc-950 text-zinc-50 flex flex-col pt-6 pb-8 px-6 md:px-10 overflow-y-auto border-r border-zinc-900 shadow-2xl relative z-20">
+    <aside className="print:hidden w-full md:w-[40%] lg:w-[32%] xl:w-[28%] h-full bg-black/80 text-zinc-50 flex flex-col pt-6 pb-8 px-6 md:px-10 overflow-y-auto border-r border-white/5 shadow-2xl relative z-20 backdrop-blur-xl">
       <div className="flex flex-col gap-6 mb-10">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-1.5 bg-zinc-800 rounded-sm">
-              <LucideLayers3 className="w-4 h-4 text-zinc-400" />
+            <div className="w-8 h-8 rounded-full bg-cyan-accent/10 flex items-center justify-center">
+              <LucideLayers3 className="w-4 h-4 text-cyan-accent" />
             </div>
-            <h1 className="text-xl font-heading font-bold tracking-[0.1em] uppercase text-white">Editor Studio</h1>
+            <h1 className="text-xl font-heading font-black tracking-[0.2em] uppercase text-white hud-text-glow">Editor_Studio</h1>
           </div>
-          <p className="text-zinc-500 text-[10px] font-mono leading-relaxed uppercase tracking-wider">System: V2.2 // Premium</p>
+          <p className="text-white/40 text-[9px] font-mono leading-relaxed uppercase tracking-[0.2em]">Hardware: NODE_PRIME // ARCH: V2.2</p>
         </div>
       </div>
 
       <div className="flex flex-col space-y-8 flex-grow">
-        <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-sm space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
+        <div className="hud-border p-5 space-y-5 bg-cyan-accent/5">
+          <div className="flex items-center justify-between pb-2 border-b border-white/5">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-widest font-bold text-zinc-400">Master Data</span>
+              <span className="text-[10px] uppercase tracking-[0.3em] font-black text-cyan-accent/60">Master_Archive</span>
             </div>
           </div>
           
           {store.isProfileLoading ? (
-            <div className="flex items-center gap-3 py-2 text-zinc-600 animate-pulse">
+            <div className="flex items-center gap-3 py-2 text-cyan-accent animate-pulse">
               <LucideCircleDashed className="w-4 h-4 animate-spin" />
-              <span className="text-[10px] uppercase font-mono tracking-tighter">Syncing Engine...</span>
+              <span className="text-[10px] uppercase font-mono tracking-tighter">UPLINKING...</span>
             </div>
           ) : store.masterProfile ? (
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-2">
-                <div className="p-2 bg-zinc-950 border border-zinc-800/50 rounded-sm text-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-1.5 opacity-40">
+                <div className="p-2 bg-black border border-white/5 text-center">
+                  <div className="flex items-center justify-center gap-1.5 mb-1.5 opacity-20">
                     <LucideBriefcase className="w-2.5 h-2.5" />
-                    <span className="text-[7px] uppercase font-bold tracking-tighter text-white">Exp.</span>
+                    <span className="text-[7px] uppercase font-bold tracking-tighter text-white">XPR</span>
                   </div>
-                  <div className="text-xs font-heading text-white">{store.masterProfile.experience?.length || 0}</div>
+                  <div className="text-xs font-mono font-black text-white">{store.masterProfile.experience?.length || 0}</div>
                 </div>
-                <div className="p-2 bg-zinc-950 border border-zinc-800/50 rounded-sm text-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-1.5 opacity-40">
+                <div className="p-2 bg-black border border-white/5 text-center">
+                  <div className="flex items-center justify-center gap-1.5 mb-1.5 opacity-20">
                     <LucideGraduationCap className="w-2.5 h-2.5" />
-                    <span className="text-[7px] uppercase font-bold tracking-tighter text-white">Edu.</span>
+                    <span className="text-[7px] uppercase font-bold tracking-tighter text-white">EDU</span>
                   </div>
-                  <div className="text-xs font-heading text-white">{store.masterProfile.education?.length || 0}</div>
+                  <div className="text-xs font-mono font-black text-white">{store.masterProfile.education?.length || 0}</div>
                 </div>
-                <div className="p-2 bg-zinc-950 border border-zinc-800/50 rounded-sm text-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-1.5 opacity-40">
+                <div className="p-2 bg-black border border-white/5 text-center">
+                  <div className="flex items-center justify-center gap-1.5 mb-1.5 opacity-20">
                     <LucideFolderGit2 className="w-2.5 h-2.5" />
-                    <span className="text-[7px] uppercase font-bold tracking-tighter text-white">Proj.</span>
+                    <span className="text-[7px] uppercase font-bold tracking-tighter text-white">PRJ</span>
                   </div>
-                  <div className="text-xs font-heading text-white">{store.masterProfile.projects?.length || 0}</div>
+                  <div className="text-xs font-mono font-black text-white">{store.masterProfile.projects?.length || 0}</div>
                 </div>
               </div>
 
@@ -133,11 +133,11 @@ export function EditorSidebar({ onGenerate }: EditorSidebarProps) {
 
         <div className="pt-6 mt-auto">
           <Button
-            className="w-full bg-cyan-accent text-black font-bold uppercase tracking-widest h-14 premium-touch"
+            className="w-full bg-cyan-accent text-black font-black uppercase tracking-[0.3em] h-14 premium-touch text-[10px] shadow-[0_0_20px_rgba(0,240,255,0.2)]"
             onClick={onGenerate}
             disabled={store.status === 'loading'}
           >
-            {store.status === 'loading' ? 'Generating...' : 'Execute Generation'}
+            {store.status === 'loading' ? 'PROCESSING...' : 'EXECUTE_OPTIMIZATION'}
           </Button>
         </div>
       </div>

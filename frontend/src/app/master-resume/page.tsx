@@ -213,6 +213,7 @@ export default function MasterResumePage() {
     setContact(prev => {
         const key = Object.keys(data)[0] as keyof typeof contact;
         const val = data[key] as string;
+        try { playHaptic(ImpactStyle.Light); } catch(e) {}
         return { ...prev, [key]: validateInput(val, LIMITS[key.toUpperCase() as keyof typeof LIMITS] || 200) };
     });
   }, []);
@@ -248,8 +249,8 @@ export default function MasterResumePage() {
     });
   }, []);
 
-  const addEducation = useCallback(() => setEducation(prev => [...prev, { institution: '', degree: '', year: '', location: '', gpa: '' }]), []);
-  const removeEducation = useCallback((idx: number) => setEducation(prev => prev.filter((_, i) => i !== idx)), []);
+  const addEducation = useCallback(() => { playHaptic(ImpactStyle.Medium); setEducation(prev => [...prev, { institution: '', degree: '', year: '', location: '', gpa: '' }]); }, []);
+  const removeEducation = useCallback((idx: number) => { playHaptic(ImpactStyle.Light); setEducation(prev => prev.filter((_, i) => i !== idx)); }, []);
   const updateEdu = useCallback((idx: number, key: keyof Education, val: string) => {
     setEducation(prev => {
         const newEdu = [...prev];
@@ -291,7 +292,9 @@ export default function MasterResumePage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans pb-32">
+      <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans pb-32 relative overflow-x-hidden">
+        {/* Global HUD Overlay */}
+        <div className="hud-scanline no-print" />
         <AnimatePresence>
             {showResumeViewer && uploadedFileUrl && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
@@ -312,13 +315,14 @@ export default function MasterResumePage() {
         <main className="pt-8 px-4 md:px-8 max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 mt-16">
             <aside className="lg:col-span-3 space-y-8">
                 <div className="lg:sticky lg:top-24 space-y-6">
-                    <div className="border border-white/10 bg-black/60 p-6 relative overflow-hidden backdrop-blur-sm">
-                        <h3 className="text-[10px] font-heading text-cyan-accent mb-2 uppercase tracking-[0.2em]">Detection Lab</h3>
-                        <p className="text-[9px] text-white/40 mb-6 uppercase font-mono font-bold tracking-tighter">PDF Parsing: Active</p>
+                    <div className="hud-border p-6 relative overflow-hidden">
+                        <h3 className="text-[10px] font-heading text-cyan-accent mb-2 uppercase tracking-[0.2em] hud-text-glow">Detection_Lab</h3>
+                        <p className="text-[9px] text-white/40 mb-6 uppercase font-mono font-bold tracking-tighter">PDF_PARSER: ACTIVE</p>
                         <input type="file" accept=".pdf" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
-                        <button onClick={() => fileInputRef.current?.click()} className="w-full h-32 border border-dashed border-white/20 hover:border-cyan-accent/50 hover:bg-cyan-muted flex flex-col items-center justify-center group transition-all">
-                            <LucideUpload className={`w-6 h-6 mb-4 ${status === 'uploading' ? 'text-cyan-accent animate-bounce' : 'text-white/20 group-hover:text-cyan-accent'}`} />
-                            <span className="text-[9px] uppercase font-heading tracking-tighter text-white/40 group-hover:text-white">Auto-fill via PDF</span>
+                        <button onClick={() => fileInputRef.current?.click()} className="w-full h-32 border border-dashed border-white/20 hover:border-cyan-accent/50 hover:bg-cyan-muted transition-all relative group flex flex-col items-center justify-center">
+                            <div className="absolute inset-0 bg-cyan-accent/0 group-hover:bg-cyan-accent/5 transition-colors" />
+                            <LucideUpload className={`w-6 h-6 mb-4 relative z-10 ${status === 'uploading' ? 'text-cyan-accent animate-bounce' : 'text-white/20 group-hover:text-cyan-accent'}`} />
+                            <span className="text-[9px] uppercase font-heading tracking-tighter text-white/40 group-hover:text-white relative z-10">Uplink via PDF</span>
                         </button>
                     </div>
                     {errorMsg && (
@@ -344,13 +348,13 @@ export default function MasterResumePage() {
 
             <aside className="lg:col-span-3 space-y-6">
                 <div className="lg:sticky lg:top-24 space-y-6">
-                    <div className={`border p-6 backdrop-blur-md transition-all ${hasChanges ? 'border-amber-500/20 bg-amber-500/5' : 'border-cyan-accent/20 bg-cyan-muted'}`}>
-                        <h3 className={`text-[10px] font-heading mb-4 uppercase tracking-widest ${hasChanges ? 'text-amber-500' : 'text-cyan-accent cyan-glow'}`}>
-                            {hasChanges ? 'Buffer Dirty' : 'Buffer Synced'}
+                    <div className={`hud-border p-6 transition-all ${hasChanges ? 'border-amber-500/20 bg-amber-500/5' : 'bg-cyan-accent/5'}`}>
+                        <h3 className={`text-[10px] font-heading mb-4 uppercase tracking-widest ${hasChanges ? 'text-amber-500' : 'text-cyan-accent hud-text-glow'}`}>
+                            {hasChanges ? 'Buffer_Dirty' : 'Profile_Synced'}
                         </h3>
                         <p className="text-[9px] font-mono leading-relaxed text-white/40 uppercase">
-                            Ready for commit? {hasChanges ? 'YES' : 'NO'}<br />
-                            Size check: PASS
+                            Ready_for_Commit: {hasChanges ? 'TRUE' : 'FALSE'}<br />
+                            Parity_State: NOMINAL
                         </p>
                     </div>
                     <Button onClick={handleSave} disabled={status === 'saving' || !hasChanges} className={`w-full h-16 uppercase font-heading tracking-widest text-[10px] font-bold border transition-all ${hasChanges ? 'bg-white text-black hover:bg-cyan-accent' : 'bg-white/5 text-white/20 cursor-not-allowed'}`}>
