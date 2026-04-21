@@ -18,6 +18,16 @@ export const metadata: Metadata = {
   description: SITE_CONFIG.seo.description,
   keywords: SITE_CONFIG.seo.keywords,
   authors: [{ name: `${SITE_CONFIG.name} Team` }],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: SITE_CONFIG.name,
+  },
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/apple-touch-icon.png",
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
