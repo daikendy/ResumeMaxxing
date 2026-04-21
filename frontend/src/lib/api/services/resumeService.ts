@@ -2,8 +2,7 @@
 
 // Wrapper around the Axios client to call /resumes/generate
 import api from '../../api';
-import { ResumeResponse } from '../types/resume';
-import { MasterResumeResponse } from '../types/masterResume';
+import { ResumeVersion, MasterProfile, TrackedJob, UserProfile } from '@/types/resume';
 
 // Helper to generate authorized headers
 const authHeaders = (token: string) => ({
@@ -13,26 +12,26 @@ const authHeaders = (token: string) => ({
 });
 
 export const resumeService = {
-  generateTailoredResume: async (data: { tracked_job_id: number; raw_resume_data: any }, token: string): Promise<ResumeResponse> => {
-    const response = await api.post<ResumeResponse>('/resumes/generate', data, authHeaders(token));
+  generateTailoredResume: async (data: { tracked_job_id: number; raw_resume_data: any }, token: string): Promise<ResumeVersion> => {
+    const response = await api.post<ResumeVersion>('/resumes/generate', data, authHeaders(token));
     return response.data;
   },
 
-  getMasterResume: async (token: string): Promise<MasterResumeResponse | null> => {
-    const response = await api.get<MasterResumeResponse | null>('/users/master-resume', authHeaders(token));
+  getMasterResume: async (token: string): Promise<MasterProfile | null> => {
+    const response = await api.get<MasterProfile | null>('/users/master-resume', authHeaders(token));
     return response.data;
   },
 
-  saveMasterResume: async (data: Record<string, any>, token: string): Promise<MasterResumeResponse> => {
+  saveMasterResume: async (data: Record<string, any>, token: string): Promise<MasterProfile> => {
     const payload = { resume_data: data };
-    const response = await api.post<MasterResumeResponse>('/users/master-resume', payload, authHeaders(token));
+    const response = await api.post<MasterProfile>('/users/master-resume', payload, authHeaders(token));
     return response.data;
   },
 
-  uploadResume: async (file: File, token: string): Promise<MasterResumeResponse> => {
+  uploadResume: async (file: File, token: string): Promise<MasterProfile> => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await api.post<MasterResumeResponse>('/users/upload-resume', formData, {
+    const response = await api.post<MasterProfile>('/users/upload-resume', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
         'Authorization': `Bearer ${token}`
@@ -41,18 +40,18 @@ export const resumeService = {
     return response.data;
   },
 
-  getTrackedJobs: async (token: string): Promise<any[]> => {
-    const response = await api.get<any[]>('/jobs/', authHeaders(token));
+  getTrackedJobs: async (token: string): Promise<TrackedJob[]> => {
+    const response = await api.get<TrackedJob[]>('/jobs/', authHeaders(token));
     return response.data;
   },
 
-  getTrackedJob: async (jobId: string, token: string): Promise<any> => {
-    const response = await api.get<any>(`/jobs/track/${jobId}`, authHeaders(token));
+  getTrackedJob: async (jobId: string, token: string): Promise<TrackedJob> => {
+    const response = await api.get<TrackedJob>(`/jobs/track/${jobId}`, authHeaders(token));
     return response.data;
   },
 
-  createTrackedJob: async (data: { company_name: string; job_title: string; job_description: string }, token: string): Promise<any> => {
-    const response = await api.post<any>('/jobs/', data, authHeaders(token));
+  createTrackedJob: async (data: { company_name: string; job_title: string; job_description: string }, token: string): Promise<TrackedJob> => {
+    const response = await api.post<TrackedJob>('/jobs/', data, authHeaders(token));
     return response.data;
   },
 
@@ -60,8 +59,8 @@ export const resumeService = {
     await api.delete(`/jobs/${jobId}`, authHeaders(token));
   },
 
-  getUserProfile: async (token: string): Promise<any> => {
-    const response = await api.get<any>('/users/me', authHeaders(token));
+  getUserProfile: async (token: string): Promise<UserProfile> => {
+    const response = await api.get<UserProfile>('/users/me', authHeaders(token));
     return response.data;
   },
 
