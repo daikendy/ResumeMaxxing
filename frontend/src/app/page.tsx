@@ -4,12 +4,12 @@ import React from 'react';
 import Link from 'next/link';
 import { SignInButton, SignedIn, SignedOut } from '@clerk/clerk-react';
 import { Button } from '@/components/ui/button';
-import { 
-  LucideTerminal, 
-  LucideLayoutDashboard, 
-  LucideZap, 
-  LucideShieldCheck, 
-  LucideTarget, 
+import {
+  LucideTerminal,
+  LucideLayoutDashboard,
+  LucideZap,
+  LucideShieldCheck,
+  LucideTarget,
   LucideCpu,
   LucideArrowRight
 } from 'lucide-react';
@@ -17,12 +17,12 @@ import {
 export default function Home() {
   return (
     <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans overflow-x-hidden">
-      
+
       {/* HERO SECTION */}
       <section className="relative min-h-[90vh] flex flex-col items-center justify-center pt-24 pb-20 px-6 overflow-hidden">
         {/* Background Accents */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-accent/5 rounded-full blur-[120px] pointer-events-none" />
-        
+
         <div className="max-w-5xl mx-auto text-center relative z-10 w-full">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <span className="relative flex h-2 w-2">
@@ -38,7 +38,7 @@ export default function Home() {
           </h1>
 
           <p className="max-w-2xl mx-auto text-sm md:text-lg font-mono text-white/40 uppercase tracking-[0.2em] leading-relaxed mb-12 animate-in fade-in slide-in-from-bottom-12 duration-700">
-            The AI Resume Architect built for engineers. engineered for results. zero jargon. total precision. 
+            The AI Resume Architect engineered for **Software Engineers**. Zero jargon. Total precision. **ATS-verified exports** built for technical recruiters.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 w-full animate-in fade-in slide-in-from-bottom-16 duration-700">
@@ -49,7 +49,7 @@ export default function Home() {
                 </Button>
               </SignInButton>
             </SignedOut>
-            
+
             <SignedIn>
               <Link href="/dashboard" className="w-full sm:w-auto">
                 <Button className="w-full h-16 px-12 bg-cyan-accent text-black hover:bg-white uppercase font-heading font-bold tracking-[0.2em] text-sm transition-all shadow-[0_0_30px_rgba(0,240,255,0.2)]">
@@ -76,9 +76,9 @@ export default function Home() {
               <div className="w-12 h-12 bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:bg-cyan-accent group-hover:text-black transition-all">
                 <LucideCpu className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-heading text-white uppercase tracking-widest mb-4">Master Profile</h3>
+              <h3 className="text-xl font-heading text-white uppercase tracking-widest mb-4">Master Identity</h3>
               <p className="text-xs font-mono text-white/40 uppercase leading-relaxed">
-                Save everything once. Your skills, history, and impact, stored in a perfectly engineered identity vault.
+                Save your tech stack once. From Kubernetes to React, store your impact and history in a perfectly indexed vault.
               </p>
             </div>
 
@@ -87,9 +87,9 @@ export default function Home() {
               <div className="w-12 h-12 bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:bg-cyan-accent group-hover:text-black transition-all">
                 <LucideTarget className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-heading text-white uppercase tracking-widest mb-4">Tailored Match</h3>
+              <h3 className="text-xl font-heading text-white uppercase tracking-widest mb-4">Tech-First Match</h3>
               <p className="text-xs font-mono text-white/40 uppercase leading-relaxed">
-                Instant resume adaptation. Match the job requirement perfectly every single time without lifting a finger.
+                Instant role adaptation. We align your experience with job descriptions using precision AI that speaks "Developer."
               </p>
             </div>
 
@@ -98,14 +98,15 @@ export default function Home() {
               <div className="w-12 h-12 bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:bg-cyan-accent group-hover:text-black transition-all">
                 <LucideShieldCheck className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-heading text-white uppercase tracking-widest mb-4">ATS Verified</h3>
+              <h3 className="text-xl font-heading text-white uppercase tracking-widest mb-4">Parser Hardened</h3>
               <p className="text-xs font-mono text-white/40 uppercase leading-relaxed">
-                Engineered for robots, designed for humans. We make sure you bypass the filters and land on the hiring manager's desk.
+                Mathematically engineered single-column templates that pass Greenhouse, Workday, and Lever parsers with 100% accuracy.
               </p>
             </div>
           </div>
         </div>
       </section>
+
 
       {/* CALL TO ACTION - MOBILE NATIVE VERSION */}
       <section className="py-20 md:py-32 px-6 text-center border-t border-white/5">
