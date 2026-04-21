@@ -20,19 +20,25 @@ export default function RootLayout({
   }
 
   return (
-    <ClerkProvider 
+    <ClerkProvider
       publishableKey={PUBLISHABLE_KEY!}
       localization={{
+        socialButtonsBlockButton: "Authorize via {{provider}}",
+        dividerText: "OR_ESTABLISH_EMAIL_UPLINK",
         signIn: {
           start: {
-            subtitle: "Enter credentials or use biometric uplink. By signing in, you agree to our Terms and Privacy Policy."
+            title: "ESTABLISH_UPLINK",
+            subtitle: "Authorized session for ResumeMaxxing. By continuing, you agree to our Terms & Privacy Protocols."
           }
         },
         signUp: {
           start: {
-            subtitle: "Create your operator profile. By signing up, you agree to our Terms and Privacy Policy."
+            title: "INITIALIZE_OPERATOR",
+            subtitle: "New identity creation sequence. By continuing, you agree to our Terms & Privacy Protocols."
           }
-        }
+        },
+        formFieldLabel__emailAddress: "USER_IDENTIFIER",
+        formFieldLabel__password: "ACCESS_TOKEN",
       }}
       appearance={{
         baseTheme: dark,

@@ -137,11 +137,12 @@
 
 @media print {
   @page {
-    margin: 0 !important; /* This is the primary trigger to hide headers/footers */
+    /* Dynamics handled by EditorClient */
   }
 
   /* 1. Global Reset - Absolute authority over page geometry */
-  html, body {
+  html,
+  body {
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
@@ -155,12 +156,12 @@
   }
 
   /* 2. Hide ALL application chrome and UI */
-  .no-print, 
+  .no-print,
   .print-hidden,
-  aside, 
-  header, 
-  nav, 
-  button, 
+  aside,
+  header,
+  nav,
+  button,
   .editor-hud,
   [role="alert"],
   [data-radix-portal] {
@@ -187,7 +188,8 @@
     display: flex !important;
     flex-direction: column !important;
     visibility: visible !important;
-    position: absolute !important; /* Rips out of flow to prevent parent-induced offsets */
+    position: absolute !important;
+    /* Rips out of flow to prevent parent-induced offsets */
     top: 0 !important;
     left: 0 !important;
     background: white !important;
@@ -200,13 +202,19 @@
   #printable-resume-mount.size-a4 {
     width: 210mm !important;
     height: 297mm !important;
-    padding: 6mm !important;
+    padding: 0mm 10mm 10mm 10mm !important;
   }
 
   #printable-resume-mount.size-letter {
-    width: 215.9mm !important; /* 8.5in */
-    height: 279.4mm !important; /* 11in */
-    padding: 6mm !important;
+    width: 215.9mm !important;
+    /* 8.5in */
+    height: 279.4mm !important;
+    /* 11in */
+    padding: 0mm 10mm 10mm 10mm !important;
+  }
+
+  #resume-export-target {
+    margin-top: -10mm !important;
   }
 
   #printable-resume-mount * {
@@ -217,8 +225,8 @@
   }
 
   /* 5. High-contrast assets */
-  #printable-resume-mount .bg-zinc-200 { 
-    background-color: black !important; 
+  #printable-resume-mount .bg-zinc-200 {
+    background-color: black !important;
     height: 1px !important;
   }
 }

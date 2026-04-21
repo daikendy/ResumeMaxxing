@@ -24,7 +24,8 @@ import {
   LucideSettings,
   LucideShare2,
   LucideCopy,
-  LucideShieldCheck
+  LucideShieldCheck,
+  LucideAlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';

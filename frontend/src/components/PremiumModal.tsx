@@ -41,53 +41,55 @@ export const PremiumModal: React.FC<PremiumModalProps> = ({
         <div className="p-5 md:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-grow bg-black/20">
           <AlertDialogHeader className="space-y-4 flex flex-col items-center">
             <div className="space-y-1 text-center flex flex-col items-center w-full">
-                <AlertDialogTitle className="text-xl md:text-3xl font-bold tracking-tight leading-tight break-words text-center">
-                {title}
+                <AlertDialogTitle className="text-xl md:text-3xl font-black italic uppercase tracking-tighter text-white">
+                  {title === "Update your plan" ? "QUOTA_EXCEEDED" : title}
                 </AlertDialogTitle>
                 {errorCode && (
                     <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest text-center">
-                        Error ID: {errorCode}
+                        LOG_ID: {errorCode}
                     </p>
                 )}
             </div>
             
-            <div className="bg-zinc-900/50 border border-zinc-800 p-4 md:p-5 relative rounded-lg">
-                <AlertDialogDescription className="text-zinc-300 text-center text-sm md:text-base leading-relaxed">
-                  {description}
+            <div className="bg-zinc-900/50 border border-zinc-800 p-4 md:p-5 relative rounded-none">
+                <AlertDialogDescription className="text-zinc-400 text-center text-[11px] md:text-xs font-mono uppercase tracking-widest leading-relaxed">
+                  {description.includes("reached the limit") 
+                    ? "Maximum generation capacity reached for this cycle. Re-initiate systems by upgrading or unlocking bonus resources."
+                    : description}
                 </AlertDialogDescription>
             </div>
           </AlertDialogHeader>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex items-center gap-4 p-4 bg-zinc-900/30 border border-zinc-800/50 rounded-lg hover:border-cyan-accent/30 transition-all group">
-                <div className="shrink-0 p-2 bg-zinc-800 rounded-md group-hover:bg-cyan-accent/10 transition-colors">
-                    <LucideCheckCircle2 className="w-5 h-5 text-cyan-accent" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-4">
+            <div className="flex items-center gap-4 p-4 bg-zinc-900/10 border border-emerald-500/10 rounded-none hover:border-emerald-500/30 transition-all group">
+                <div className="shrink-0 p-2 bg-emerald-500/5 rounded-none group-hover:bg-emerald-500/10 transition-colors">
+                    <LucideZap className="w-5 h-5 text-emerald-500" />
                 </div>
                 <div className="space-y-0.5">
-                    <p className="text-xs font-bold text-white">Unlimited Access</p>
-                    <p className="text-[10px] text-zinc-500 leading-tight">No limits on resume creation.</p>
+                    <p className="text-[10px] font-black text-white uppercase tracking-widest">Refer & Earn</p>
+                    <p className="text-[9px] text-zinc-600 uppercase font-mono">+5 Slots Per Invite</p>
                 </div>
             </div>
-            <div className="flex items-center gap-4 p-4 bg-zinc-900/30 border border-zinc-800/50 rounded-lg hover:border-cyan-accent/30 transition-all group">
-                <div className="shrink-0 p-2 bg-zinc-800 rounded-md group-hover:bg-cyan-accent/10 transition-colors">
-                    <LucideLayers3 className="w-5 h-5 text-cyan-accent" />
+            <div className="flex items-center gap-4 p-4 bg-cyan-accent/5 border border-cyan-accent/10 rounded-none hover:border-cyan-accent/30 transition-all group">
+                <div className="shrink-0 p-2 bg-cyan-accent/5 rounded-none group-hover:bg-cyan-accent/10 transition-colors">
+                    <LucideCpu className="w-5 h-5 text-cyan-accent" />
                 </div>
                 <div className="space-y-0.5">
-                    <p className="text-xs font-bold text-white">Save Your Progress</p>
-                    <p className="text-[10px] text-zinc-500 leading-tight">Your history is kept forever.</p>
+                    <p className="text-[10px] font-black text-white uppercase tracking-widest">Unlock Pro</p>
+                    <p className="text-[9px] text-zinc-600 uppercase font-mono">Infinite Generations</p>
                 </div>
             </div>
           </div>
         </div>
 
-        <AlertDialogFooter className="p-5 md:p-8 bg-zinc-950 border-t border-zinc-900 flex flex-col sm:flex-row gap-3 flex-shrink-0">
-          <AlertDialogCancel className="bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg h-12 text-sm transition-all sm:w-1/3">
-            Not now
+        <AlertDialogFooter className="p-5 md:p-8 bg-zinc-950 border-t border-zinc-900 flex flex-col sm:flex-row gap-4 flex-shrink-0">
+          <AlertDialogCancel className="bg-transparent border-zinc-800 text-zinc-500 hover:text-white hover:bg-zinc-900 rounded-none h-14 text-[10px] uppercase font-black tracking-widest transition-all sm:flex-grow">
+            Return_To_Dashboard
           </AlertDialogCancel>
           <AlertDialogAction 
-            className="bg-cyan-accent hover:opacity-90 text-black font-bold text-sm h-12 rounded-lg px-8 transition-all shadow-lg shadow-cyan-accent/20 sm:flex-grow border-none"
+            className="bg-white hover:bg-cyan-accent text-black font-black text-[10px] uppercase tracking-[0.2em] h-14 rounded-none px-12 transition-all shadow-[0_0_30px_rgba(34,211,238,0.1)] sm:flex-grow border-none"
           >
-            Upgrade Now
+            Upgrade_Account
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
