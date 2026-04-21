@@ -158,25 +158,37 @@ async def restore_vault_snapshot(request: Request, payload: VaultRestoreRequest,
     """Restore a vaulted snapshot into the active master resume."""
     user = await sync_user_to_db(current_user, db)
     
-    # 1. Fetch snapshot
     snapshot = await vault_crud.get_snapshot_by_id(db, payload.snapshot_id, user.id)
     if not snapshot:
-        raise HTTPException(status_code=404, detail="Snapshot not found")
-        
-    # 2. Update Master
-    result = await db.execute(select(MasterResume).filter(MasterResume.user_id == user.id))
-    master = result.scalars().first()
-    if not master:
-        master = MasterResume(user_id=user.id, resume_data=snapshot.resume_data)
-        db.add(master)
-    else:
-        master.resume_data = snapshot.resume_data
-        
-    # 3. Log Activity
-    await vault_crud.log_activity(db, user.id, "VAULT_RESTORE", f"Profile Restored: {snapshot.name}")
+        raise HTTPException(status_code=404, detail="SNAPSHOT_NOT_FOUND")
     
-    await db.commit()
-    return {"success": True, "message": f"Successfully restored: {snapshot.name}"}
+    from crud import resume_crud
+    await resume_crud.upsert_master_resume(db, user.id, snapshot.resume_data)
+    await vault_crud.log_activity(db, user.id, "VAULT_RESTORE", f"Profile restored: {snapshot.name}")
+    
+    return {"status": "SUCCESS", "name": snapshot.name}
+
+@router.delete("/vault/purge")
+@limiter.limit("2/minute") # 🛡️ High-risk protocol
+async def purge_vault(request: Request, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Wipe the entire vault archive for the current pilot."""
+    user = await sync_user_to_db(current_user, db)
+    count = await vault_crud.purge_vault(db, user.id)
+    
+    await vault_crud.log_activity(db, user.id, "SYSTEM_WIPE", f"Erased {count} snapshots from the archive.")
+    return {"status": "SUCCESS", "erased_count": count}
+
+@router.delete("/vault/{snapshot_id}")
+@limiter.limit("20/minute")
+async def delete_snapshot(request: Request, snapshot_id: int, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Decommission a specific version from the vault."""
+    user = await sync_user_to_db(current_user, db)
+    success = await vault_crud.delete_snapshot(db, snapshot_id, user.id)
+    if not success:
+        raise HTTPException(status_code=404, detail="SNAPSHOT_NOT_FOUND")
+    
+    await vault_crud.log_activity(db, user.id, "VAULT_DECOMMISSION", f"Version ID:{snapshot_id} scrubbed.")
+    return {"status": "SUCCESS"}
 
 @router.get("/activity", response_model=list[ActivityLogResponse])
 async def get_activity_telemetry(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):

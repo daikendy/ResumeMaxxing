@@ -93,5 +93,15 @@ export const resumeService = {
   restoreVaultSnapshot: async (snapshotId: number, token: string): Promise<any> => {
     const response = await api.post<any>('/users/vault/restore', { snapshot_id: snapshotId }, authHeaders(token));
     return response.data;
+  },
+  
+  deleteVaultSnapshot: async (snapshotId: number, token: string): Promise<any> => {
+    const response = await api.delete<any>(`/users/vault/${snapshotId}`, authHeaders(token));
+    return response.data;
+  },
+
+  purgeVault: async (token: string): Promise<any> => {
+    const response = await api.delete<any>('/users/vault/purge', authHeaders(token));
+    return response.data;
   }
 };

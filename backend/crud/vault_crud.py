@@ -61,3 +61,14 @@ async def delete_snapshot(db: AsyncSession, snapshot_id: int, user_id: str):
         await db.commit()
         return True
     return False
+
+async def purge_vault(db: AsyncSession, user_id: str):
+    """System-wide wipe of all snapshots for a specific pilot."""
+    result = await db.execute(
+        select(VaultSnapshot).filter(VaultSnapshot.user_id == user_id)
+    )
+    snapshots = result.scalars().all()
+    for s in snapshots:
+        await db.delete(s)
+    await db.commit()
+    return len(snapshots)

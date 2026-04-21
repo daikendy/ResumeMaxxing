@@ -4,9 +4,11 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { resumeService } from '@/lib/api/services/resumeService';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LucideShieldCheck, LucideDatabase, LucideRotateCcw, LucidePlus, LucideLoader2 } from 'lucide-react';
+import { LucideShieldCheck, LucideDatabase, LucideRotateCcw, LucidePlus, LucideLoader2, LucideTrash2, LucideAlertTriangle, LucideX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 interface Snapshot {
   id: number;
@@ -20,6 +22,12 @@ export default function VaultManager() {
   const [loading, setLoading] = useState(true);
   const [isCapturing, setIsCapturing] = useState(false);
   const [restoringId, setRestoringId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [purgePhrase, setPurgePhrase] = useState('');
+  const [isPurging, setIsPurging] = useState(false);
+  const [showInlinePurge, setShowInlinePurge] = useState(false);
+
+  const CONFIRMATION_PHRASE = "DELETE_ARCHIVE";
 
   useEffect(() => {
     fetchSnapshots();
@@ -68,6 +76,41 @@ export default function VaultManager() {
     }
   };
 
+  const handleDelete = async (id: number) => {
+    setDeletingId(id);
+    try {
+      const token = await getToken();
+      if (!token) return;
+      await resumeService.deleteVaultSnapshot(id, token);
+      setSnapshots(prev => prev.filter(s => s.id !== id));
+      toast.info("VERSION_DECOMMISSIONED");
+      try { await Haptics.impact({ style: ImpactStyle.Medium }); } catch (e) {}
+    } catch (e) {
+      toast.error("DECOMMISSION_FAILED");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handlePurge = async () => {
+    if (purgePhrase !== CONFIRMATION_PHRASE) return;
+    setIsPurging(true);
+    try {
+      const token = await getToken();
+      if (!token) return;
+      await resumeService.purgeVault(token);
+      setSnapshots([]);
+      setPurgePhrase('');
+      setShowInlinePurge(false);
+      toast.warning("SYSTEM_WIPE_COMPLETE", { description: "All vaulted records erased." });
+      try { await Haptics.impact({ style: ImpactStyle.Heavy }); } catch (e) {}
+    } catch (e) {
+      toast.error("PURGE_FAILED");
+    } finally {
+      setIsPurging(false);
+    }
+  };
+
   return (
     <div className="hud-border bg-cyan-accent/5 p-6 space-y-6 flex flex-col group relative">
       <div className="flex justify-between items-center">
@@ -80,17 +123,68 @@ export default function VaultManager() {
             <span className="text-[8px] font-mono text-cyan-accent/60 uppercase">Snapshot Persistence Active</span>
           </div>
         </div>
-        <Button 
-          onClick={handleCapture}
-          disabled={isCapturing}
-          className="h-10 px-4 bg-cyan-accent text-black hover:bg-white text-[10px] font-heading font-bold tracking-widest transition-all active:scale-95 group/btn"
-        >
-          {isCapturing ? <LucideLoader2 className="w-4 h-4 animate-spin" /> : <LucidePlus className="w-4 h-4 mr-2" />}
-          SNAPSHOT_NOW
-        </Button>
+        {snapshots.length < 20 ? (
+          <Button 
+            onClick={handleCapture}
+            disabled={isCapturing}
+            className="h-10 px-4 bg-cyan-accent text-black hover:bg-white text-[10px] font-heading font-bold tracking-widest transition-all active:scale-95 group/btn"
+          >
+            {isCapturing ? <LucideLoader2 className="w-4 h-4 animate-spin" /> : <LucidePlus className="w-4 h-4 mr-2" />}
+            SNAPSHOT_NOW
+          </Button>
+        ) : (
+          <Button 
+            onClick={() => setShowInlinePurge(true)}
+            className="h-10 px-4 bg-red-600 text-white hover:bg-red-700 text-[10px] font-heading font-black tracking-widest transition-all animate-pulse shadow-[0_0_15px_rgba(220,38,38,0.4)]"
+          >
+            [PURGE_REQUIRED]
+          </Button>
+        )}
       </div>
 
-      <div className="flex-1 overflow-y-auto max-h-[350px] custom-scrollbar space-y-2 pr-2">
+      <div className="flex-1 overflow-y-auto max-h-[350px] custom-scrollbar space-y-2 pr-2 relative">
+        <AnimatePresence>
+          {showInlinePurge && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="absolute inset-0 z-20 bg-black/90 backdrop-blur-sm border border-red-600/30 p-4 flex flex-col justify-center gap-4 text-center overflow-hidden"
+            >
+              <div className="space-y-1">
+                <h4 className="text-[10px] font-heading font-black text-red-500 uppercase tracking-[0.2em] flex items-center justify-center gap-2">
+                   <LucideAlertTriangle className="w-4 h-4" /> WIPE_PROTOCOL_ACTIVE
+                </h4>
+                <p className="text-[8px] font-mono text-white/40 uppercase">Enter "{CONFIRMATION_PHRASE}" to confirm scrub.</p>
+              </div>
+              
+              <Input 
+                value={purgePhrase}
+                onChange={(e) => setPurgePhrase(e.target.value.toUpperCase())}
+                placeholder="AUTHORIZATION_KEY"
+                className="bg-red-500/10 border-red-500/30 text-white font-mono text-center tracking-[0.3em] text-[10px] h-10"
+                autoFocus
+              />
+
+              <div className="flex gap-2 h-8">
+                <Button 
+                  variant="ghost"
+                  onClick={() => { setShowInlinePurge(false); setPurgePhrase(''); }}
+                  className="flex-1 border border-white/10 text-white/40 text-[8px] font-heading tracking-widest uppercase hover:bg-white/5"
+                >
+                  ABORT
+                </Button>
+                <Button 
+                  disabled={purgePhrase !== CONFIRMATION_PHRASE || isPurging}
+                  onClick={handlePurge}
+                  className="flex-1 bg-red-600 text-white text-[8px] font-heading tracking-widest uppercase font-black"
+                >
+                  {isPurging ? 'SCRUBBING...' : 'CONFIRM_WIPE'}
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         {loading ? (
            <div className="py-12 flex flex-col items-center justify-center opacity-20">
               <LucideDatabase className="w-8 h-8 animate-pulse mb-2" />
@@ -119,14 +213,24 @@ export default function VaultManager() {
                     ID: {s.id} | CREATED: {new Date(s.created_at).toLocaleDateString()}
                   </span>
                 </div>
-                <Button 
-                  onClick={() => handleRestore(s.id, s.name)}
-                  disabled={restoringId !== null}
-                  variant="ghost"
-                  className="h-8 w-8 p-0 hover:bg-cyan-accent hover:text-black transition-all"
-                >
-                  {restoringId === s.id ? <LucideLoader2 className="w-3 h-3 animate-spin" /> : <LucideRotateCcw className="w-4 h-4" />}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    onClick={() => handleRestore(s.id, s.name)}
+                    disabled={restoringId !== null || deletingId !== null}
+                    variant="ghost"
+                    className="h-8 w-8 p-0 hover:bg-cyan-accent hover:text-black transition-all"
+                  >
+                    {restoringId === s.id ? <LucideLoader2 className="w-3 h-3 animate-spin" /> : <LucideRotateCcw className="w-4 h-4" />}
+                  </Button>
+                  <Button 
+                    onClick={() => handleDelete(s.id)}
+                    disabled={deletingId !== null || restoringId !== null}
+                    variant="ghost"
+                    className="h-8 w-8 p-0 hover:bg-red-600 hover:text-white transition-all opacity-0 group-hover/item:opacity-100"
+                  >
+                    {deletingId === s.id ? <LucideLoader2 className="w-3 h-3 animate-spin" /> : <LucideTrash2 className="w-3 h-3" />}
+                  </Button>
+                </div>
               </motion.div>
             ))}
           </AnimatePresence>
@@ -136,12 +240,12 @@ export default function VaultManager() {
       <div className="pt-4 border-t border-white/5 flex flex-col gap-2 opacity-30">
           <div className="flex justify-between items-center text-[7px] font-mono uppercase tracking-widest">
             <span>Redundancy: STATUS_OK</span>
-            <span>{snapshots.length}/50 Slots Filled</span>
+            <span>{snapshots.length}/20 Slots Filled</span>
           </div>
           <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
              <motion.div 
                initial={{ width: 0 }}
-               animate={{ width: `${(snapshots.length / 50) * 100}%` }}
+               animate={{ width: `${(snapshots.length / 20) * 100}%` }}
                className="h-full bg-cyan-accent" 
              />
           </div>
