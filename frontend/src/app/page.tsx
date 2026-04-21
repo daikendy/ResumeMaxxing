@@ -14,6 +14,7 @@ import {
   LucideArrowRight
 } from 'lucide-react';
 import { SITE_CONFIG } from '@/lib/config';
+import Footer from '@/components/Footer';
 
 export default function Home() {
   return (
@@ -133,18 +134,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="py-12 px-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
-        <div className="flex items-center gap-4">
-          <LucideTerminal className="w-6 h-6 text-cyan-accent" />
-          <span className="text-[10px] font-mono text-white/20 uppercase tracking-[0.3em]">© {new Date().getFullYear()} {SITE_CONFIG.name}. Engineered for impact.</span>
-        </div>
-        <div className="flex gap-8 text-[10px] font-mono text-white/20 uppercase tracking-widest">
-          <Link href="/privacy" className="hover:text-white transition-colors underline decoration-zinc-800 underline-offset-4 font-bold">Privacy</Link>
-          <Link href="/terms" className="hover:text-white transition-colors underline decoration-zinc-800 underline-offset-4 font-bold">Terms</Link>
-          <Link href={`mailto:${SITE_CONFIG.company.email}`} className="hover:text-white transition-colors">Contact</Link>
-        </div>
-      </footer>
+      <Footer />
 
     </div>
   );

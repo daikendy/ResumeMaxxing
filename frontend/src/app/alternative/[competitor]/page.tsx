@@ -86,19 +86,21 @@ export function generateStaticParams() {
   ];
 }
 
-export async function generateMetadata({ params }: { params: { competitor: string } }): Promise<Metadata> {
-  const competitor = COMPETITORS[params.competitor.toLowerCase()];
-  if (!competitor) return { title: "Alternative Not Found" };
+export async function generateMetadata({ params }: { params: Promise<{ competitor: string }> }): Promise<Metadata> {
+  const { competitor } = await params;
+  const data = COMPETITORS[competitor.toLowerCase()];
+  if (!data) return { title: "Alternative Not Found" };
 
   return {
-    title: `Best ${competitor.name} Alternative for Software Engineers | ${SITE_CONFIG.name}`,
-    description: competitor.description,
-    keywords: competitor.keywords,
+    title: `Best ${data.name} Alternative for Software Engineers | ${SITE_CONFIG.name}`,
+    description: data.description,
+    keywords: data.keywords,
   };
 }
 
-export default function AlternativePage({ params }: { params: { competitor: string } }) {
-  const data = COMPETITORS[params.competitor.toLowerCase()];
+export default async function AlternativePage({ params }: { params: Promise<{ competitor: string }> }) {
+  const { competitor } = await params;
+  const data = COMPETITORS[competitor.toLowerCase()];
   if (!data) notFound();
 
   return (
