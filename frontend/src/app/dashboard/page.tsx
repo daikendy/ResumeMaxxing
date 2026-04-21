@@ -44,6 +44,15 @@ const STATUS_CONFIG: Record<string, { color: string, bg: string, icon: any, prio
 
 const STATUS_ORDER = ['bookmarked', 'applied', 'interviewing', 'hired', 'rejected'];
 
+// 🛡️ Input Limits (Synced with Backend)
+const LIMITS = {
+  TITLE: 100,
+  COMPANY: 100,
+  URL: 500,
+  DESCRIPTION: 15000,
+  REFERRAL: 6
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   const { getToken, isLoaded } = useAuth();
@@ -73,6 +82,7 @@ export default function DashboardPage() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [activeStatusDropdown, setActiveStatusDropdown] = useState<number | null>(null);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const playHaptic = async (style = ImpactStyle.Light) => {
     try {
@@ -126,7 +136,7 @@ export default function DashboardPage() {
   };
 
   const handleRedeemCode = async () => {
-    if (!referralInput) return;
+    if (!referralInput || referralInput.length !== 6) return;
     setIsRedeeming(true);
     playHaptic(ImpactStyle.Medium);
     try {
@@ -269,6 +279,21 @@ export default function DashboardPage() {
     }
   };
 
+  const getCounterColor = (length: number, max: number) => {
+    const ratio = length / max;
+    if (ratio >= 1) return 'text-red-500';
+    if (ratio >= 0.8) return 'text-yellow-500/60';
+    return 'text-white/20';
+  };
+
+  const handleInputChange = (field: keyof typeof jobFormData, value: string, max: number) => {
+    if (value.length > max) {
+      playHaptic(ImpactStyle.Medium);
+      return;
+    }
+    setJobFormData({ ...jobFormData, [field]: value });
+  };
+
   return (
     <AuthGuard>
       <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans pb-20 overflow-x-hidden">
@@ -287,22 +312,62 @@ export default function DashboardPage() {
               </div>
               <form onSubmit={handleJobSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <div className="space-y-2">
-                     <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Target Role</label>
-                     <Input value={jobFormData.job_title} onChange={e => setJobFormData({...jobFormData, job_title: e.target.value})} className="bg-black/40 border-white/10 text-white" placeholder="e.g. Senior Backend Engineer" />
+                   <div className="space-y-2 relative">
+                     <div className="flex justify-between items-center">
+                        <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Target Role</label>
+                        {focusedField === 'title' && <span className={`text-[9px] font-mono ${getCounterColor(jobFormData.job_title.length, LIMITS.TITLE)}`}>{jobFormData.job_title.length}/{LIMITS.TITLE}</span>}
+                     </div>
+                     <Input 
+                        value={jobFormData.job_title} 
+                        onFocus={() => setFocusedField('title')}
+                        onBlur={() => setFocusedField(null)}
+                        onChange={e => handleInputChange('job_title', e.target.value, LIMITS.TITLE)} 
+                        className="bg-black/40 border-white/10 text-white" 
+                        placeholder="e.g. Senior Backend Engineer" 
+                     />
                    </div>
-                   <div className="space-y-2">
-                     <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Company Name</label>
-                     <Input value={jobFormData.company_name} onChange={e => setJobFormData({...jobFormData, company_name: e.target.value})} className="bg-black/40 border-white/10 text-white" placeholder="e.g. Google, Inc." />
+                   <div className="space-y-2 relative">
+                     <div className="flex justify-between items-center">
+                        <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Company Name</label>
+                        {focusedField === 'company' && <span className={`text-[9px] font-mono ${getCounterColor(jobFormData.company_name.length, LIMITS.COMPANY)}`}>{jobFormData.company_name.length}/{LIMITS.COMPANY}</span>}
+                     </div>
+                     <Input 
+                        value={jobFormData.company_name} 
+                        onFocus={() => setFocusedField('company')}
+                        onBlur={() => setFocusedField(null)}
+                        onChange={e => handleInputChange('company_name', e.target.value, LIMITS.COMPANY)} 
+                        className="bg-black/40 border-white/10 text-white" 
+                        placeholder="e.g. Google, Inc." 
+                     />
                    </div>
                 </div>
-                <div className="space-y-2">
-                   <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Job URL {jobFormData.id && '(Edit)'}</label>
-                   <Input value={jobFormData.job_url} onChange={e => setJobFormData({...jobFormData, job_url: e.target.value})} className="bg-black/40 border-white/10 text-white" placeholder="https://linkedin.com/jobs/..." />
+                <div className="space-y-2 relative">
+                   <div className="flex justify-between items-center">
+                      <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Job URL {jobFormData.id && '(Edit)'}</label>
+                      {focusedField === 'url' && <span className={`text-[9px] font-mono ${getCounterColor(jobFormData.job_url.length, LIMITS.URL)}`}>{jobFormData.job_url.length}/{LIMITS.URL}</span>}
+                   </div>
+                   <Input 
+                      value={jobFormData.job_url} 
+                      onFocus={() => setFocusedField('url')}
+                      onBlur={() => setFocusedField(null)}
+                      onChange={e => handleInputChange('job_url', e.target.value, LIMITS.URL)} 
+                      className="bg-black/40 border-white/10 text-white" 
+                      placeholder="https://linkedin.com/jobs/..." 
+                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Job Description</label>
-                  <Textarea value={jobFormData.job_description} onChange={e => setJobFormData({...jobFormData, job_description: e.target.value})} className="bg-black/40 border-white/10 text-white min-h-[150px]" placeholder="Paste requirements..." />
+                <div className="space-y-2 relative">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Job Description</label>
+                    {focusedField === 'desc' && <span className={`text-[9px] font-mono ${getCounterColor(jobFormData.job_description.length, LIMITS.DESCRIPTION)}`}>{jobFormData.job_description.length}/{LIMITS.DESCRIPTION}</span>}
+                  </div>
+                  <Textarea 
+                    value={jobFormData.job_description} 
+                    onFocus={() => setFocusedField('desc')}
+                    onBlur={() => setFocusedField(null)}
+                    onChange={e => handleInputChange('job_description', e.target.value, LIMITS.DESCRIPTION)} 
+                    className="bg-black/40 border-white/10 text-white min-h-[150px]" 
+                    placeholder="Paste requirements..." 
+                  />
                 </div>
                 <Button type="submit" disabled={isSubmitting || !jobFormData.job_title || !jobFormData.company_name || !jobFormData.job_description} className="w-full h-14 bg-cyan-accent text-black font-heading font-bold tracking-[0.2em] premium-touch">
                   {isSubmitting ? 'SYNCING...' : jobFormData.id ? 'SAVE CHANGES' : 'INITIALIZE TRACK'}
@@ -459,10 +524,27 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <>
-                  <h3 className="text-xl font-bold text-white italic uppercase tracking-tighter">Enter <span className="text-cyan-accent">Key</span></h3>
+                  <div className="flex justify-between items-center mb-1">
+                     <h3 className="text-xl font-bold text-white italic uppercase tracking-tighter">Enter <span className="text-cyan-accent">Key</span></h3>
+                     {referralInput.length > 0 && <span className={`text-[9px] font-mono ${getCounterColor(referralInput.length, LIMITS.REFERRAL)}`}>{referralInput.length}/{LIMITS.REFERRAL}</span>}
+                  </div>
                   <div className="flex gap-2">
-                     <input type="text" placeholder="ACCESS_CODE" value={referralInput} onChange={(e) => setReferralInput(e.target.value.toUpperCase())} className="flex-grow p-4 bg-zinc-900 border border-zinc-800 text-white outline-none focus:border-cyan-accent font-mono" />
-                     <Button onClick={handleRedeemCode} disabled={isRedeeming || !referralInput} className="bg-zinc-800 hover:bg-white hover:text-black h-14 px-8">ACTIVATE</Button>
+                     <input 
+                        type="text" 
+                        placeholder="ACCESS_CODE" 
+                        value={referralInput} 
+                        onChange={(e) => {
+                           const val = e.target.value.toUpperCase();
+                           if (val.length <= LIMITS.REFERRAL) {
+                              setReferralInput(val);
+                              if (val.length === LIMITS.REFERRAL) playHaptic(ImpactStyle.Medium);
+                           } else {
+                              playHaptic(ImpactStyle.Heavy);
+                           }
+                        }} 
+                        className="flex-grow p-4 bg-zinc-900 border border-zinc-800 text-white outline-none focus:border-cyan-accent font-mono" 
+                     />
+                     <Button onClick={handleRedeemCode} disabled={isRedeeming || referralInput.length !== LIMITS.REFERRAL} className="bg-zinc-800 hover:bg-white hover:text-black h-14 px-8">ACTIVATE</Button>
                   </div>
                 </>
               )}
@@ -473,7 +555,7 @@ export default function DashboardPage() {
       <footer className="fixed bottom-0 left-0 w-full z-40 glass-panel px-8 py-3 flex justify-between items-center text-[9px] font-mono text-white/20 uppercase tracking-widest no-print">
         <div className="flex gap-6">
            <span>CLOUD_STATUS: STABLE</span>
-           <span>SECURE_SESSION V0.4</span>
+           <span>SECURE_SESSION V0.5</span>
         </div>
         <div className="hidden sm:block">QUOTA: {userData?.generations_used || 0} / {(userData?.generations_limit + userData?.bonus_quota) || 5}</div>
         <div className="flex gap-4">
