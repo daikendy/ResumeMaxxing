@@ -1,30 +1,33 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, update
-from database import get_db
-from schemas.resume_schema import ResumeCreate, ResumeResponse
-from models.user_model import User
-from models.resume_model import ResumeVersion
-from models.job_model import TrackedJob
-from services.ai_service import tailor_resume
+from sqlalchemy.ext.asyncio import AsyncSession
 
+# Local Imports
 from auth_utils import get_current_user, sync_user_to_db
+from database import get_db
+from models.job_model import TrackedJob
+from models.resume_model import ResumeVersion
+from models.user_model import User
+from schemas.resume_schema import ResumeCreate, ResumeResponse
+from services.ai_service import tailor_resume
+from utils.exceptions import QuotaExceededException
 
 router = APIRouter(prefix="/resumes", tags=["Resumes"])
 
-from utils.exceptions import QuotaExceededException
-
 @router.post("/generate", response_model=ResumeResponse)
 async def generate_tailored_resume(payload: ResumeCreate, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    
-    # 1. Ensure User is synced (⚡ Awaited Async Sync)
+    """
+    Takes the user's master profile and a tracked job, 
+    calls OpenAI to tailor the resume, and saves the result.
+    """
+    # 1. Ensure User is synced
     user = await sync_user_to_db(current_user, db)
     
     total_allowed = user.generations_limit + user.bonus_quota
     if user.generations_used >= total_allowed:
         raise QuotaExceededException()
 
-    # 2. Fetch the Job Description (⚡ Async 2.0 Query)
+    # 2. Fetch the Job Description
     result = await db.execute(select(TrackedJob).filter(TrackedJob.id == payload.tracked_job_id))
     job = result.scalars().first()
     if not job:
@@ -37,19 +40,19 @@ async def generate_tailored_resume(payload: ResumeCreate, current_user: dict = D
         job_title=job.job_title
     )
 
-    # 4. Calculate Version (⚡ Async Count)
+    # 4. Calculate Version Number
     count_result = await db.execute(select(func.count(ResumeVersion.id)).filter(ResumeVersion.tracked_job_id == job.id))
     existing_versions = count_result.scalar() or 0
     new_version_number = existing_versions + 1
 
-    # 5. Deactivate old versions (⚡ Async Update)
+    # 5. Deactivate old versions for this job
     await db.execute(
         update(ResumeVersion)
         .where(ResumeVersion.tracked_job_id == job.id)
         .values(is_active=False)
     )
 
-    # 6. Push new version
+    # 6. Save the new version
     new_resume = ResumeVersion(
         tracked_job_id=job.id,
         user_id=user.id,
@@ -58,7 +61,7 @@ async def generate_tailored_resume(payload: ResumeCreate, current_user: dict = D
         is_active=True
     )
     
-    # 7. Update User and Commit
+    # 7. Update User stats and commit
     user.generations_used += 1
     db.add(new_resume)
     await db.commit()

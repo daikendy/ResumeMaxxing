@@ -1,14 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, func
-from sqlalchemy.orm import selectinload
 from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select, desc, func
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+# Local Imports
+from auth_utils import get_current_user, sync_user_to_db
 from database import get_db
 from models.job_model import TrackedJob
+from models.user_model import User
 from schemas.job_schema import JobCreate, JobResponse
-from models.user_model import User # Needed for quota check
-
-from auth_utils import get_current_user, sync_user_to_db
+from utils.exceptions import LimitReachedException
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
@@ -19,7 +22,7 @@ async def get_user_jobs(current_user: dict = Depends(get_current_user), db: Asyn
     
     result = await db.execute(
         select(TrackedJob)
-        .options(selectinload(TrackedJob.resume_versions)) # ⚡ EAGER LOAD
+        .options(selectinload(TrackedJob.resume_versions))
         .filter(TrackedJob.user_id == current_user["id"])
         .order_by(desc(TrackedJob.created_at))
     )
@@ -32,7 +35,7 @@ async def get_job_by_id(job_id: int, current_user: dict = Depends(get_current_us
     
     result = await db.execute(
         select(TrackedJob)
-        .options(selectinload(TrackedJob.resume_versions)) # ⚡ EAGER LOAD
+        .options(selectinload(TrackedJob.resume_versions))
         .filter(TrackedJob.id == job_id, TrackedJob.user_id == current_user["id"])
     )
     job = result.scalars().first()
@@ -40,8 +43,6 @@ async def get_job_by_id(job_id: int, current_user: dict = Depends(get_current_us
     if not job:
         raise HTTPException(status_code=404, detail="Job track not found or unauthorized access")
     return job
-
-from utils.exceptions import LimitReachedException
 
 @router.post("/", response_model=JobResponse)
 async def create_job(payload: JobCreate, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):

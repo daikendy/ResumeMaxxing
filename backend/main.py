@@ -1,19 +1,22 @@
 import os
 import time
+from typing import List
+
 from fastapi import FastAPI, Depends, HTTPException, Request
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
-from database import get_db, Base, engine
-from routers import resume_router, user_router, job_router, webhook_router
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+# Local Imports
 import models
+from database import get_db
+from routers import resume_router, user_router, job_router, webhook_router
+from utils.exceptions import ResumeMaxxingException
+from utils.logging_config import setup_logging, logger
 
 # 📝 Initialize Logging
-from utils.logging_config import setup_logging, logger
 setup_logging()
-
-from fastapi.responses import JSONResponse
-from utils.exceptions import ResumeMaxxingException
 
 app = FastAPI(
     title="ResumeMaxxing API",
@@ -22,7 +25,6 @@ app = FastAPI(
 )
 
 # 📡 THE "UNBLOCKER": Proactive CORS Hardening
-# Moving this to the very top ensures it wraps the Global Exception Handler
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], # Allow all for local dev to prevent Axios Network Error
@@ -62,26 +64,20 @@ async def log_requests(request: Request, call_next):
     
     return response
 
-MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
-
-# 🚨 THE FIX: Attach the routers to the app immediately
+# Attach Routers
 app.include_router(resume_router.router)
 app.include_router(user_router.router)
 app.include_router(job_router.router)
 app.include_router(webhook_router.router)
 
 @app.get("/")
-def read_root():
+async def read_root():
     return {"message": "Welcome to the ResumeMaxxing API"}
 
 @app.get("/health")
 async def health_check(db: AsyncSession = Depends(get_db)):
-    """
-    Health check endpoint to verify that the server is running
-    and the database connection is active.
-    """
+    """Health check endpoint to verify database connectivity."""
     try:
-        # Simple test query to verify database connectivity
         await db.execute(text("SELECT 1"))
         return {"status": "ok", "database": "connected"}
     except Exception as e:
@@ -93,6 +89,4 @@ async def health_check(db: AsyncSession = Depends(get_db)):
 
 if __name__ == "__main__":
     import uvicorn
-    # This block allows you to run it directly from your IDE 
-    # Just make sure your IDE is using the python interpreter from the 'venv' folder
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

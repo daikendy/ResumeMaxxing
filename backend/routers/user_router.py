@@ -1,17 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 import io
+
 import PyPDF2
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+# Local Imports
+from auth_utils import get_current_user, sync_user_to_db
+from crud import user_crud
 from database import get_db
 from models.master_resume_model import MasterResume
 from models.user_model import User
 from schemas.master_resume_schema import MasterResumeCreate, MasterResumeResponse
 from schemas.user_schema import UserResponse, RedeemCodeRequest
 from services.ai_service import extract_resume_data
-from crud import user_crud
-
-from auth_utils import get_current_user, sync_user_to_db
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -28,15 +30,12 @@ async def save_master_resume(payload: MasterResumeCreate, current_user: dict = D
     await sync_user_to_db(current_user, db)
     user_id = current_user["id"]
     
-    # Check if exists
     result = await db.execute(select(MasterResume).filter(MasterResume.user_id == user_id))
     db_resume = result.scalars().first()
 
     if db_resume:
-        # Update existing
         db_resume.resume_data = payload.resume_data
     else:
-        # Create new
         db_resume = MasterResume(user_id=user_id, resume_data=payload.resume_data)
         db.add(db_resume)
 
@@ -46,22 +45,22 @@ async def save_master_resume(payload: MasterResumeCreate, current_user: dict = D
 
 @router.post("/upload-resume")
 async def upload_resume(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db), file: UploadFile = File(...)):
-    """Extract data from a PDF."""
+    """Extract data from a PDF resume using OCR/Text extraction and AI parsing."""
     await sync_user_to_db(current_user, db)
+    
     if not file.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
         
     try:
-        # Read the file
         contents = await file.read()
         pdf_reader = PyPDF2.PdfReader(io.BytesIO(contents))
         
-        # Extract text from all pages
+        # 1. Extract raw text
         text = ""
         for page in pdf_reader.pages:
             text += page.extract_text() + "\n"
         
-        # Extract hyperlink annotations
+        # 2. Extract hyperlink annotations (GitHub, LinkedIn, etc.)
         hyperlinks = []
         for page in pdf_reader.pages:
             if "/Annots" in page:
@@ -83,16 +82,16 @@ async def upload_resume(current_user: dict = Depends(get_current_user), db: Asyn
         if not text.strip():
             raise HTTPException(status_code=400, detail="Could not extract text from PDF.")
             
-        # Send text to AI
+        # 3. Send text to the AI Engine for structuring
         json_data = await extract_resume_data(text)
         return {"resume_data": json_data}
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"PDF Parsing Failed: {str(e)}")
 
 @router.get("/me", response_model=UserResponse)
 async def get_user_me(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    """Fetch current user details."""
+    """Fetch current user details and stats."""
     await sync_user_to_db(current_user, db)
     user = await user_crud.get_user(db, current_user["id"])
     if not user:
@@ -101,7 +100,7 @@ async def get_user_me(current_user: dict = Depends(get_current_user), db: AsyncS
 
 @router.post("/redeem-code")
 async def redeem_code(payload: RedeemCodeRequest, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    """Redeem a referral code for bonus quota."""
+    """Redeem a referral code for bonus resume generations."""
     await sync_user_to_db(current_user, db)
     result = await user_crud.redeem_referral_code(db, current_user["id"], payload.code)
     

@@ -167,7 +167,7 @@ async def extract_resume_data(pdf_text: str) -> dict:
         )
         return json.loads(response.choices[0].message.content)
     except Exception as e:
-        print(f"❌ OPENAI ERROR (PDF PARSE): {str(e)}")
+        logger.error("AI_PDF_PARSE_FAILED", error=str(e))
         raise Exception(f"Failed to parse PDF using OpenAI: {str(e)}")
 
 async def preprocess_job_description(jd_text: str):
@@ -197,7 +197,7 @@ async def preprocess_job_description(jd_text: str):
         )
         return json.loads(response.choices[0].message.content)
     except Exception as e:
-        print(f"❌ JD PREPROCESS ERROR: {str(e)}")
+        logger.error("JD_PREPROCESS_FAILED", error=str(e))
         return None
 
 async def parse_pdf_resume(pdf_text: str):
