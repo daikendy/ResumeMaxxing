@@ -200,12 +200,36 @@ async def preprocess_job_description(jd_text: str):
         logger.error("JD_PREPROCESS_FAILED", error=str(e))
         return None
 
-async def parse_pdf_resume(pdf_text: str):
-    # ... (existing code with 60s timeout)
-    system_prompt = """
-    You are a professional resume parser. 
-    Extract data into the following JSON structure. 
-    Preserve all dates, locations, and technologies.
-    ...
+async def summarize_master_resume(resume_data: dict) -> str:
     """
-    # ...
+    Analyzes the resume data and generates a punchy 3-5 word summary 
+    to be used as the snapshot name.
+    """
+    if MOCK_MODE:
+        return "Software Engineer (V1 System Snapshot)"
+
+    system_prompt = """
+    You are a career console AI. 
+    Review the user's resume and generate a 3-5 word high-level summary of their identity.
+    Examples: 
+    - Senior Fullstack Engineer (React/Go)
+    - DevOps Architect (AWS/K8s)
+    - Junior Data Scientist (Python)
+    
+    CRITICAL: Output ONLY the summary string. No JSON, no extra words.
+    """
+    
+    try:
+        response = await client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Resume Data: {json.dumps(resume_data)[:2000]}"}
+            ],
+            temperature=0.3,
+            timeout=15.0
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        logger.error("AI_SUMMARY_FAILED", error=str(e))
+        return f"Snapshot - {asyncio.get_event_loop().time()}"

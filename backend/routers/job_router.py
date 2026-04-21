@@ -14,6 +14,7 @@ from schemas.job_schema import JobCreate, JobResponse, JobUpdate
 from utils.exceptions import LimitReachedException
 from utils.sanitization import sanitize_text
 from utils.limiter import limiter
+from crud import vault_crud
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
@@ -77,6 +78,12 @@ async def create_job(request: Request, payload: JobCreate, current_user: dict = 
     )
     
     db.add(db_job)
+    
+    await vault_crud.log_activity(
+        db, user_id, "TARGET_ACQUIRED", 
+        f"New Target: {db_job.job_title} @ {db_job.company_name}"
+    )
+    
     await db.commit()
     await db.refresh(db_job)
     return db_job
@@ -122,6 +129,13 @@ async def update_tracked_job(job_id: int, payload: JobUpdate, current_user: dict
         job.job_title = sanitize_text(payload.job_title)
     if payload.company_name is not None:
         job.company_name = sanitize_text(payload.company_name)
+    
+    # Log status update if changed
+    if payload.status is not None:
+         await vault_crud.log_activity(
+            db, current_user["id"], "TARGET_STATUS_UPDATED", 
+            f"Target Status: {job.job_title} -> {payload.status.upper()}"
+        )
     
     await db.commit()
     await db.refresh(job)

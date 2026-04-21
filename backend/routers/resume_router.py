@@ -12,6 +12,7 @@ from schemas.resume_schema import ResumeCreate, ResumeResponse
 from services.ai_service import tailor_resume
 from utils.exceptions import QuotaExceededException
 from utils.limiter import limiter
+from crud import vault_crud
 
 router = APIRouter(prefix="/resumes", tags=["Resumes"])
 
@@ -63,9 +64,15 @@ async def generate_tailored_resume(request: Request, payload: ResumeCreate, curr
         is_active=True
     )
     
-    # 7. Update User stats and commit
+    # 7. Update User stats, log activity and commit
     user.generations_used += 1
     db.add(new_resume)
+    
+    await vault_crud.log_activity(
+        db, user.id, "ZAP_GENERATED", 
+        f"Tailored Resume generated for {job.job_title} @ {job.company_name}"
+    )
+    
     await db.commit()
     await db.refresh(new_resume)
 

@@ -24,6 +24,8 @@ import StatsBanner from './components/StatsBanner';
 import ReferralPortal from './components/ReferralPortal';
 import JobTracker from './components/JobTracker';
 import JobFormModal from './components/JobFormModal';
+import ActivityFeed from './components/ActivityFeed';
+import VaultManager from './components/VaultManager';
 
 const STATUS_CONFIG: Record<string, { color: string, bg: string, icon: any, priority: number }> = {
   'hired': { color: 'text-emerald-400', bg: 'bg-emerald-400/10', icon: LucideShieldCheck, priority: 1 },
@@ -183,7 +185,10 @@ export default function DashboardPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans pb-32">
+      <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans pb-32 relative overflow-x-hidden">
+        {/* Global HUD Overlay */}
+        <div className="hud-scanline no-print" />
+
         <header className="fixed top-0 left-0 w-full z-50 border-b border-white/5 bg-black/80 backdrop-blur-md px-8 py-4 flex justify-between items-center no-print">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2 group cursor-pointer" onClick={() => router.push('/')}>
@@ -204,6 +209,16 @@ export default function DashboardPage() {
 
         <main className="pt-24 px-4 md:px-8 max-w-[1400px] mx-auto">
           <StatsBanner stats={stats} />
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+            <div className="lg:col-span-2">
+                <VaultManager />
+            </div>
+            <div className="lg:col-span-1">
+                <ActivityFeed />
+            </div>
+          </div>
+
           <ReferralPortal
             referralCode={userData?.referral_code}
             referralInput={referralInput}

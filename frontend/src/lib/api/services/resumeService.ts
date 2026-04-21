@@ -72,5 +72,26 @@ export const resumeService = {
   redeemReferralCode: async (code: string, token: string): Promise<any> => {
     const response = await api.post<any>('/users/redeem-code', { code }, authHeaders(token));
     return response.data;
+  },
+
+  // --- VAULT & TELEMETRY ---
+  getActivityTelemetry: async (token: string): Promise<any[]> => {
+    const response = await api.get<any[]>('/users/activity', authHeaders(token));
+    return response.data;
+  },
+
+  getVaultSnapshots: async (token: string): Promise<any[]> => {
+    const response = await api.get<any[]>('/users/vault', authHeaders(token));
+    return response.data;
+  },
+
+  createVaultSnapshot: async (token: string): Promise<any> => {
+    const response = await api.post<any>('/users/vault/snapshot', {}, authHeaders(token));
+    return response.data;
+  },
+
+  restoreVaultSnapshot: async (snapshotId: number, token: string): Promise<any> => {
+    const response = await api.post<any>('/users/vault/restore', { snapshot_id: snapshotId }, authHeaders(token));
+    return response.data;
   }
 };

@@ -17,6 +17,12 @@ from services.ai_service import extract_resume_data
 from utils.sanitization import sanitize_data
 from utils.limiter import limiter
 
+# Vault Imports
+from models.vault_model import VaultSnapshot, ActivityLog
+from schemas.vault_schema import VaultSnapshotResponse, ActivityLogResponse, VaultRestoreRequest
+from crud import vault_crud
+from services.ai_service import summarize_master_resume
+
 router = APIRouter(prefix="/users", tags=["Users"])
 
 @router.get("/master-resume", response_model=MasterResumeResponse | None)
@@ -114,3 +120,66 @@ async def redeem_code(request: Request, payload: RedeemCodeRequest, current_user
         raise HTTPException(status_code=400, detail=result["message"])
     
     return result
+
+# --- VAULT & HUD HUD TELEMETRY ---
+
+@router.get("/vault", response_model=list[VaultSnapshotResponse])
+async def get_vault_snapshots(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """List all vaulted snapshots for the user."""
+    await sync_user_to_db(current_user, db)
+    return await vault_crud.get_snapshots(db, current_user["id"])
+
+@router.post("/vault/snapshot", response_model=VaultSnapshotResponse)
+@limiter.limit("5/minute") # 🛡️ Protection against AI-burn and spam
+async def create_vault_snapshot(request: Request, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Create a new vault snapshot from the current master resume."""
+    user = await sync_user_to_db(current_user, db)
+    
+    # 1. Fetch current master
+    result = await db.execute(select(MasterResume).filter(MasterResume.user_id == user.id))
+    master = result.scalars().first()
+    if not master:
+        raise HTTPException(status_code=404, detail="Master resume not found. Create one first.")
+        
+    # 2. AI Summarization for the name
+    summary = await summarize_master_resume(master.resume_data)
+    
+    # 3. Save snapshot
+    snapshot = await vault_crud.create_snapshot(db, user.id, summary, master.resume_data)
+    
+    # 4. Log Activity
+    await vault_crud.log_activity(db, user.id, "VAULT_SAVE", f"Snapshot Created: {summary}")
+    
+    return snapshot
+
+@router.post("/vault/restore")
+@limiter.limit("10/minute") # 🛡️ Guard against rapid state switching
+async def restore_vault_snapshot(request: Request, payload: VaultRestoreRequest, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Restore a vaulted snapshot into the active master resume."""
+    user = await sync_user_to_db(current_user, db)
+    
+    # 1. Fetch snapshot
+    snapshot = await vault_crud.get_snapshot_by_id(db, payload.snapshot_id, user.id)
+    if not snapshot:
+        raise HTTPException(status_code=404, detail="Snapshot not found")
+        
+    # 2. Update Master
+    result = await db.execute(select(MasterResume).filter(MasterResume.user_id == user.id))
+    master = result.scalars().first()
+    if not master:
+        master = MasterResume(user_id=user.id, resume_data=snapshot.resume_data)
+        db.add(master)
+    else:
+        master.resume_data = snapshot.resume_data
+        
+    # 3. Log Activity
+    await vault_crud.log_activity(db, user.id, "VAULT_RESTORE", f"Profile Restored: {snapshot.name}")
+    
+    await db.commit()
+    return {"success": True, "message": f"Successfully restored: {snapshot.name}"}
+
+@router.get("/activity", response_model=list[ActivityLogResponse])
+async def get_activity_telemetry(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Fetch recent HUD activity for display."""
+    await sync_user_to_db(current_user, db)
+    return await vault_crud.get_recent_activity(db, current_user["id"], limit=15)

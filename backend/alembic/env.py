@@ -20,6 +20,7 @@ import models.user_model
 import models.resume_model
 import models.job_model
 import models.master_resume_model
+import models.vault_model
 
 # Alembic config
 config = context.config

@@ -26,19 +26,19 @@
   --spacing-safe-bottom: var(--safe-area-bottom);
 
   @keyframes scan {
-    0% {
-      transform: translateY(-100%);
-      opacity: 0;
-    }
+    0% { transform: translateY(-100%); opacity: 0; }
+    50% { opacity: 0.5; }
+    100% { transform: translateY(100%); opacity: 0; }
+  }
 
-    50% {
-      opacity: 1;
-    }
+  @keyframes pulse-cyan {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
 
-    100% {
-      transform: translateY(100%);
-      opacity: 0;
-    }
+  @keyframes blink-fast {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
   }
 }
 
@@ -148,8 +148,45 @@
   text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
 }
 
-.cyan-drop-shadow {
-  filter: drop-shadow(0 0 5px rgba(0, 240, 255, 0.3));
+.hud-text-glow {
+  text-shadow: 0 0 15px rgba(0, 240, 255, 0.4), 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+.hud-border {
+  @apply border border-cyan-accent/20 bg-black/40 backdrop-blur-md relative overflow-hidden;
+}
+
+.hud-border::after {
+  content: '';
+  @apply absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-accent/50 to-transparent animate-scan pointer-events-none;
+}
+
+.hud-scanline {
+  @apply fixed inset-0 pointer-events-none z-50 overflow-hidden;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%,
+    rgba(0, 240, 255, 0.05) 50%
+  ),
+  linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.02),
+    rgba(0, 255, 0, 0.01),
+    rgba(0, 0, 255, 0.02)
+  );
+  background-size: 100% 4px, 3px 100%;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.px-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 /* Beautiful Technical Scrollbar */

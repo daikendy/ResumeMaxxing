@@ -17,10 +17,10 @@ interface StatsBannerProps {
 
 const StatsBanner = React.memo(({ stats }: StatsBannerProps) => {
   const items = [
-    { label: 'Total Scanned', count: stats.total },
-    { label: 'Interviewing', count: stats.interviewing },
-    { label: 'Current Hired', count: stats.hired },
-    { label: 'Deferred', count: stats.rejected }
+    { label: 'Total_Scanned', count: stats.total, code: '001' },
+    { label: 'Interviewing', count: stats.interviewing, code: '002' },
+    { label: 'Current_Hired', count: stats.hired, code: '003' },
+    { label: 'Archived_Def', count: stats.rejected, code: '004' }
   ];
 
   return (
@@ -28,16 +28,20 @@ const StatsBanner = React.memo(({ stats }: StatsBannerProps) => {
       {items.map((stat, idx) => (
         <motion.div 
           key={stat.label}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: idx * 0.1 }}
-          className="bg-black/60 border border-white/10 p-6 flex flex-col items-center justify-center text-center group hover:border-cyan-accent/50 transition-all backdrop-blur-sm"
+          className="hud-border p-6 flex flex-col items-center justify-center text-center group relative"
         >
+          {/* Hardware Corner Accents */}
+          <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-cyan-accent/20" />
+          <div className="absolute top-2 right-2 text-[6px] font-mono text-cyan-accent opacity-20">{stat.code}</div>
+
           <div className="flex items-center gap-2 mb-2">
-            <LucideBarChart3 className="w-3 h-3 text-cyan-accent opacity-50 group-hover:opacity-100 transition-opacity" />
-            <span className="text-[9px] uppercase tracking-widest text-white/40 font-heading">{stat.label}</span>
+            <div className="w-1 h-1 rounded-full bg-cyan-accent animate-pulse" />
+            <span className="text-[9px] uppercase tracking-[0.3em] text-white/40 font-mono font-bold whitespace-nowrap">{stat.label}</span>
           </div>
-          <span className="text-3xl font-heading text-white tracking-widest group-hover:text-cyan-accent transition-colors">
+          <span className="text-4xl font-heading text-white tracking-widest hud-text-glow">
             {stat.count.toString().padStart(2, '0')}
           </span>
         </motion.div>
