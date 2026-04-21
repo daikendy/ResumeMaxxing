@@ -13,6 +13,9 @@ from models.user_model import User
 from schemas.job_schema import JobCreate, JobResponse
 from utils.exceptions import LimitReachedException
 
+from utils.exceptions import LimitReachedException
+from utils.sanitization import sanitize_text
+
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
 @router.get("/", response_model=List[JobResponse])
@@ -63,12 +66,12 @@ async def create_job(payload: JobCreate, current_user: dict = Depends(get_curren
     if job_count >= total_quota:
         raise LimitReachedException(f"TIER LIMIT: You have reached your limit of {total_quota} tracked jobs. Invite friends or upgrade to Pro for more.")
     
-    # 2. Create the job
+    # 2. Create the job (Sanitized)
     db_job = TrackedJob(
         user_id=user_id,
-        company_name=payload.company_name,
-        job_title=payload.job_title,
-        job_description=payload.job_description,
+        company_name=sanitize_text(payload.company_name),
+        job_title=sanitize_text(payload.job_title),
+        job_description=sanitize_text(payload.job_description),
         status='bookmarked'
     )
     

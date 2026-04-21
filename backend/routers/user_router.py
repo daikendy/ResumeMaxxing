@@ -14,6 +14,7 @@ from models.user_model import User
 from schemas.master_resume_schema import MasterResumeCreate, MasterResumeResponse
 from schemas.user_schema import UserResponse, RedeemCodeRequest
 from services.ai_service import extract_resume_data
+from utils.sanitization import sanitize_data
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -34,9 +35,11 @@ async def save_master_resume(payload: MasterResumeCreate, current_user: dict = D
     db_resume = result.scalars().first()
 
     if db_resume:
-        db_resume.resume_data = payload.resume_data
+        # Update existing (Sanitized)
+        db_resume.resume_data = sanitize_data(payload.resume_data)
     else:
-        db_resume = MasterResume(user_id=user_id, resume_data=payload.resume_data)
+        # Create new (Sanitized)
+        db_resume = MasterResume(user_id=user_id, resume_data=sanitize_data(payload.resume_data))
         db.add(db_resume)
 
     await db.commit()
