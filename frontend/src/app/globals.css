@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Outfit:wght@100..900&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -7,9 +8,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-outfit);
   --font-mono: var(--font-mono);
-  --font-heading: var(--font-space-grotesk);
+  --font-heading: var(--font-outfit);
 
   --color-cyan-accent: #00F0FF;
   --color-cyan-muted: rgba(0, 240, 255, 0.1);
@@ -41,10 +42,17 @@
 :root {
   --background: #000000;
   --foreground: #FFFFFF;
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-mono);
+  --font-inter: 'Inter', sans-serif;
+  --font-outfit: 'Outfit', sans-serif;
+  --font-sans: var(--font-outfit);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --radius: 0px;
-  /* Industrial sharp corners */
+
+  /* Safe Area Insets for Mobile (Capacitor) */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
 
   --primary: #00F0FF;
   --primary-foreground: #000000;
@@ -57,20 +65,39 @@
   * {
     @apply border-white/10 outline-none;
     border-radius: 0 !important;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
     @apply bg-black text-white selection:bg-cyan-accent selection:text-black;
     font-feature-settings: "ss01", "ss02", "cv01";
+    padding-top: var(--safe-area-top);
+    padding-bottom: var(--safe-area-bottom);
+    padding-left: var(--safe-area-left);
+    padding-right: var(--safe-area-right);
   }
 
   h1,
   h2,
   h3,
   h4 {
-    @apply font-heading tracking-tighter uppercase;
+    @apply font-heading tracking-tight uppercase font-bold;
   }
 }
+
+/* Premium UI Utilities */
+.glass-panel {
+  @apply bg-white/5 backdrop-blur-xl border border-white/10;
+}
+
+.glass-panel-heavy {
+  @apply bg-black/60 backdrop-blur-2xl border border-white/10;
+}
+
+.premium-touch {
+  @apply active:scale-95 transition-transform duration-200 cursor-pointer select-none;
+}
+
 
 /* Technical Aesthetic Utilities */
 .industrial-grid {

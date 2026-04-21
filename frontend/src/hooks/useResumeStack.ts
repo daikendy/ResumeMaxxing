@@ -87,6 +87,7 @@ export function useResumeStack<T extends { id?: number; version_number?: number 
     canUndo: currentIndex > 0,
     canRedo: currentIndex < history.length - 1,
     totalDepth: history.length,
-    currentIndex: currentIndex + 1
+    currentIndex: currentIndex + 1,
+    history // Expose full array for timeline rendering
   };
 }
