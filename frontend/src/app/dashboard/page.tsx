@@ -7,7 +7,7 @@ import { resumeService } from '@/lib/api/services/resumeService';
 import { AuthGuard } from '@/components/AuthGuard';
 import { PremiumModal } from '@/components/PremiumModal';
 import { Button } from '@/components/ui/button';
-import { 
+import {
   LucideLayoutDashboard,
   LucideBriefcase,
   LucideShieldCheck,
@@ -49,7 +49,13 @@ export default function DashboardPage() {
   const [activeStatusDropdown, setActiveStatusDropdown] = useState<number | null>(null);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [jobFormData, setJobFormData] = useState({ id: null as number | null, job_title: '', company_name: '', job_description: '', job_url: '' });
+  const [jobFormData, setJobFormData] = useState<{
+    id: number | null;
+    job_title: string;
+    company_name: string;
+    job_description: string;
+    job_url: string;
+  }>({ id: null, job_title: '', company_name: '', job_description: '', job_url: '' });
 
   useEffect(() => {
     if (isLoaded) {
@@ -89,8 +95,8 @@ export default function DashboardPage() {
   const filteredJobs = useMemo(() => {
     return jobs
       .filter(job => {
-        const matchesSearch = job.job_title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                             job.company_name?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = job.job_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          job.company_name?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = !statusFilter || job.status === statusFilter;
         return matchesSearch && matchesStatus;
       })
@@ -106,7 +112,7 @@ export default function DashboardPage() {
       if (!token) throw new Error("No session");
       await resumeService.redeemReferralCode(referralInput, token);
       setReferralInput('');
-      fetchUserData(); 
+      fetchUserData();
       toast.success("BONUS ACTIVATED!", { description: "+5 Generations added." });
     } catch (err: any) {
       toast.error("REFERRAL FAILED", { description: err.response?.data?.detail || "Invalid code." });
@@ -143,13 +149,14 @@ export default function DashboardPage() {
       const token = await getToken();
       if (!token) return;
       if (jobFormData.id) {
-        await resumeService.updateTrackedJob(jobFormData.id, {
+        const payload = {
           job_title: jobFormData.job_title,
           company_name: jobFormData.company_name,
           job_url: jobFormData.job_url,
           job_description: jobFormData.job_description
-        }, token);
-        setJobs(prev => prev.map(j => j.id === jobFormData.id ? { ...j, ...jobFormData } : j));
+        };
+        await resumeService.updateTrackedJob(jobFormData.id, payload, token);
+        setJobs(prev => prev.map(j => j.id === jobFormData.id ? { ...j, ...payload } : j));
         toast.success("TARGET_UPDATED");
       } else {
         const newJob = await resumeService.createTrackedJob(jobFormData, token);
@@ -164,7 +171,13 @@ export default function DashboardPage() {
   };
 
   const openEditModal = useCallback((job: TrackedJob) => {
-    setJobFormData({ id: job.id, job_title: job.job_title, company_name: job.company_name, job_description: job.job_description || '', job_url: job.job_url || '' });
+    setJobFormData({
+      id: job.id,
+      job_title: job.job_title,
+      company_name: job.company_name || '',
+      job_description: job.job_description || '',
+      job_url: job.job_url || ''
+    });
     setIsModalOpen(true);
   }, []);
 
@@ -172,54 +185,54 @@ export default function DashboardPage() {
     <AuthGuard>
       <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans pb-32">
         <header className="fixed top-0 left-0 w-full z-50 border-b border-white/5 bg-black/80 backdrop-blur-md px-8 py-4 flex justify-between items-center no-print">
-            <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2 group cursor-pointer" onClick={() => router.push('/')}>
-                    <div className="w-8 h-8 bg-white text-black flex items-center justify-center font-heading font-black text-xl italic group-hover:bg-cyan-accent transition-colors">R</div>
-                    <span className="font-heading font-bold text-sm tracking-tighter text-white">RESUMEMAXXING <span className="text-cyan-accent opacity-50 font-mono text-[10px]">V1.0</span></span>
-                </div>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2 group cursor-pointer" onClick={() => router.push('/')}>
+              <div className="w-8 h-8 bg-white text-black flex items-center justify-center font-heading font-black text-xl italic group-hover:bg-cyan-accent transition-colors">R</div>
+              <span className="font-heading font-bold text-sm tracking-tighter text-white">RESUMEMAXXING <span className="text-cyan-accent opacity-50 font-mono text-[10px]">V1.0</span></span>
             </div>
-            <div className="flex items-center gap-4">
-                <div className="flex flex-col items-end mr-4">
-                    <span className="text-[10px] font-heading text-white tracking-widest uppercase">{userData?.full_name || 'GUEST_USER'}</span>
-                    <span className="text-[8px] font-mono text-cyan-accent uppercase tracking-tighter">CREDITS: {userData?.credits ?? '--'} GENS</span>
-                </div>
-                <Button variant="ghost" onClick={() => router.push('/master-resume')} className="h-9 px-4 border border-white/10 hover:border-cyan-accent text-[10px] font-heading tracking-widest uppercase">
-                    Modify Master Profile
-                </Button>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col items-end mr-4">
+              <span className="text-[10px] font-heading text-white tracking-widest uppercase">{userData?.full_name || 'GUEST_USER'}</span>
+              <span className="text-[8px] font-mono text-cyan-accent uppercase tracking-tighter">CREDITS: {userData?.credits ?? '--'} GENS</span>
             </div>
+            <Button variant="ghost" onClick={() => router.push('/master-resume')} className="h-9 px-4 border border-white/10 hover:border-cyan-accent text-[10px] font-heading tracking-widest uppercase">
+              Modify Master Profile
+            </Button>
+          </div>
         </header>
 
         <main className="pt-24 px-4 md:px-8 max-w-[1400px] mx-auto">
-            <StatsBanner stats={stats} />
-            <ReferralPortal 
-                referralCode={userData?.referral_code} 
-                referralInput={referralInput} 
-                isRedeeming={isRedeeming} 
-                onRedeem={handleRedeemCode} 
-                onInputChange={setReferralInput}
-                playHaptic={playHaptic}
-            />
-            <JobTracker 
-                searchTerm={searchTerm} onSearchChange={setSearchTerm}
-                statusFilter={statusFilter} onStatusFilterChange={setStatusFilter}
-                filteredJobs={filteredJobs} statusOrder={STATUS_ORDER} statusConfig={STATUS_CONFIG}
-                activeStatusDropdown={activeStatusDropdown} onToggleDropdown={setActiveStatusDropdown}
-                onUpdateStatus={handleUpdateStatus} onEditJob={openEditModal}
-                onDeleteJob={handleDeleteJob} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId}
-                onOpenModal={() => { setJobFormData({ id: null, job_title: '', company_name: '', job_description: '', job_url: '' }); setIsModalOpen(true); }}
-            />
+          <StatsBanner stats={stats} />
+          <ReferralPortal
+            referralCode={userData?.referral_code}
+            referralInput={referralInput}
+            isRedeeming={isRedeeming}
+            onRedeem={handleRedeemCode}
+            onInputChange={setReferralInput}
+            playHaptic={playHaptic}
+          />
+          <JobTracker
+            searchTerm={searchTerm} onSearchChange={setSearchTerm}
+            statusFilter={statusFilter} onStatusFilterChange={setStatusFilter}
+            filteredJobs={filteredJobs} statusOrder={STATUS_ORDER} statusConfig={STATUS_CONFIG}
+            activeStatusDropdown={activeStatusDropdown} onToggleDropdown={setActiveStatusDropdown}
+            onUpdateStatus={handleUpdateStatus} onEditJob={openEditModal}
+            onDeleteJob={handleDeleteJob} confirmDeleteId={confirmDeleteId} setConfirmDeleteId={setConfirmDeleteId}
+            onOpenModal={() => { setJobFormData({ id: null, job_title: '', company_name: '', job_description: '', job_url: '' }); setIsModalOpen(true); }}
+          />
         </main>
 
-        <JobFormModal 
-            isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}
-            formData={jobFormData} onInputChange={(k, v) => setJobFormData(prev => ({ ...prev, [k]: v }))}
-            onSubmit={handleSubmitJob} isSubmitting={isSubmitting}
-            focusedField={focusedField} setFocusedField={setFocusedField}
+        <JobFormModal
+          isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}
+          formData={jobFormData} onInputChange={(k, v) => setJobFormData(prev => ({ ...prev, [k]: v }))}
+          onSubmit={handleSubmitJob} isSubmitting={isSubmitting}
+          focusedField={focusedField} setFocusedField={setFocusedField}
         />
 
         <footer className="fixed bottom-0 left-0 w-full z-40 glass-panel px-8 py-3 flex justify-between items-center text-[9px] font-mono text-white/20 uppercase no-print">
-            <div className="flex gap-6"><span>SYNC_ROOT: ACTIVE</span><span>ARMED</span></div>
-            <div className="flex gap-4"><span>VERSION: 0.9.4_BUILD</span>{/* Link to credits/pricing could go here */}</div>
+          <div className="flex gap-6"><span>SYNC_ROOT: ACTIVE</span><span>ARMED</span></div>
+          <div className="flex gap-4"><span>VERSION: 0.9.4_BUILD</span>{/* Link to credits/pricing could go here */}</div>
         </footer>
       </div>
     </AuthGuard>
