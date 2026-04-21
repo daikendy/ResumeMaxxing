@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@clerk/clerk-react';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,9 @@ import {
   LucideClock,
   LucideFileText,
   LucideSearch,
-  LucideChevronDown
+  LucideChevronDown,
+  LucideBarChart3,
+  LucidePencil
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -32,12 +34,12 @@ import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { TrackedJob } from '@/types/resume';
 
 // 🎨 Status Config: Colors and Icons for the "Industry Look"
-const STATUS_CONFIG: Record<string, { color: string, bg: string, icon: any }> = {
-  'bookmarked': { color: 'text-white/40', bg: 'bg-white/5', icon: LucideClock },
-  'applied': { color: 'text-cyan-accent', bg: 'bg-cyan-accent/10', icon: LucideCheckCircle2 },
-  'interviewing': { color: 'text-yellow-400', bg: 'bg-yellow-400/10', icon: LucideBriefcase },
-  'hired': { color: 'text-emerald-400', bg: 'bg-emerald-400/10', icon: LucideShieldCheck },
-  'rejected': { color: 'text-red-400', bg: 'bg-red-400/10', icon: LucideX },
+const STATUS_CONFIG: Record<string, { color: string, bg: string, icon: any, priority: number }> = {
+  'hired': { color: 'text-emerald-400', bg: 'bg-emerald-400/10', icon: LucideShieldCheck, priority: 1 },
+  'interviewing': { color: 'text-yellow-400', bg: 'bg-yellow-400/10', icon: LucideBriefcase, priority: 2 },
+  'applied': { color: 'text-cyan-accent', bg: 'bg-cyan-accent/10', icon: LucideCheckCircle2, priority: 3 },
+  'bookmarked': { color: 'text-white/40', bg: 'bg-white/5', icon: LucideClock, priority: 4 },
+  'rejected': { color: 'text-red-400', bg: 'bg-red-400/10', icon: LucideX, priority: 5 },
 };
 
 const STATUS_ORDER = ['bookmarked', 'applied', 'interviewing', 'hired', 'rejected'];
@@ -51,11 +53,16 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [profileStatus, setProfileStatus] = useState<'COMPLETE' | 'INITIALIZING' | 'EMPTY'>('INITIALIZING');
-  const [newJob, setNewJob] = useState({
+  
+  // 📝 Form State (Handles both Create and Edit)
+  const [jobFormData, setJobFormData] = useState({
+    id: null as number | null,
     job_title: '',
     company_name: '',
-    job_url: '' // ⚡ New field
+    job_description: '',
+    job_url: ''
   });
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [errorDetails, setErrorDetails] = useState<{title: string, message: string, code?: string} | null>(null);
@@ -63,6 +70,7 @@ export default function DashboardPage() {
   const [referralInput, setReferralInput] = useState('');
   const [isRedeeming, setIsRedeeming] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [activeStatusDropdown, setActiveStatusDropdown] = useState<number | null>(null);
 
@@ -79,6 +87,32 @@ export default function DashboardPage() {
       fetchUserData();
     }
   }, [isLoaded]);
+
+  // 📊 Analytics & Sorting Logic
+  const stats = useMemo(() => {
+    const counts = { total: jobs.length, applied: 0, interviewing: 0, hired: 0, rejected: 0, bookmarked: 0 };
+    jobs.forEach(j => {
+      if (counts[j.status as keyof typeof counts] !== undefined) {
+        counts[j.status as keyof typeof counts]++;
+      }
+    });
+    return counts;
+  }, [jobs]);
+
+  const filteredJobs = useMemo(() => {
+    return jobs
+      .filter(job => {
+        const matchesSearch = job.job_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             job.company_name?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = !statusFilter || job.status === statusFilter;
+        return matchesSearch && matchesStatus;
+      })
+      .sort((a, b) => {
+        const pA = STATUS_CONFIG[a.status]?.priority || 99;
+        const pB = STATUS_CONFIG[b.status]?.priority || 99;
+        return pA - pB; // Primary: Status Priority
+      });
+  }, [jobs, searchTerm, statusFilter]);
 
   const fetchUserData = async () => {
     try {
@@ -143,17 +177,40 @@ export default function DashboardPage() {
     }
   };
 
-  const handleCreateJob = async (e: React.FormEvent) => {
+  const handleOpenEdit = (job: TrackedJob) => {
+    setJobFormData({
+      id: job.id,
+      job_title: job.job_title,
+      company_name: job.company_name || '',
+      job_description: job.job_description,
+      job_url: job.job_url || ''
+    });
+    setIsModalOpen(true);
+    playHaptic();
+  };
+
+  const handleJobSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newJob.job_title || !newJob.company_name || !newJob.job_description) return;
+    if (!jobFormData.job_title || !jobFormData.company_name || !jobFormData.job_description) return;
     setIsSubmitting(true);
     setError(null);
     playHaptic(ImpactStyle.Heavy);
+    
     try {
       const token = await getToken();
       if (!token) throw new Error("No session found");
-      const response = await resumeService.createTrackedJob(newJob, token);
-      router.push(`/editor?jobId=${response.id}`);
+      
+      if (jobFormData.id) {
+        // 🔄 UPDATE MODE
+        const response = await resumeService.updateTrackedJob(jobFormData.id, jobFormData, token);
+        setJobs(jobs.map(j => j.id === jobFormData.id ? response : j));
+        setIsModalOpen(false);
+        toast.success("TRACK UPDATED", { description: "Metadata successfully synchronized." });
+      } else {
+        // ✨ CREATE MODE
+        const response = await resumeService.createTrackedJob(jobFormData, token);
+        router.push(`/editor?jobId=${response.id}`);
+      }
     } catch (err: any) {
       const apiError = err.response?.data;
       if (apiError && apiError.code === 'LIMIT_REACHED') {
@@ -212,11 +269,6 @@ export default function DashboardPage() {
     }
   };
 
-  const filteredJobs = jobs.filter(job => 
-    job.job_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
     <AuthGuard>
       <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans pb-20 overflow-x-hidden">
@@ -225,32 +277,35 @@ export default function DashboardPage() {
         {isModalOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="w-full max-w-xl bg-zinc-950 border border-white/10 p-8 relative">
-              <button onClick={() => { setIsModalOpen(false); playHaptic(); }} className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"><LucideX className="w-6 h-6" /></button>
+              <button 
+                onClick={() => { setIsModalOpen(false); setJobFormData({id: null, job_title: '', company_name: '', job_description: '', job_url: ''}); playHaptic(); }} 
+                className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"
+                ><LucideX className="w-6 h-6" /></button>
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-cyan-muted border border-cyan-accent/20"><LucideBriefcase className="w-5 h-5 text-cyan-accent" /></div>
-                <h2 className="text-xl font-heading text-white uppercase tracking-[0.15em]">Track New Job</h2>
+                <h2 className="text-xl font-heading text-white uppercase tracking-[0.15em]">{jobFormData.id ? 'Edit Track' : 'Track New Job'}</h2>
               </div>
-              <form onSubmit={handleCreateJob} className="space-y-6">
+              <form onSubmit={handleJobSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                    <div className="space-y-2">
                      <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Target Role</label>
-                     <Input value={newJob.job_title} onChange={e => setNewJob({...newJob, job_title: e.target.value})} className="bg-black/40 border-white/10 text-white" placeholder="e.g. Senior Backend Engineer" />
+                     <Input value={jobFormData.job_title} onChange={e => setJobFormData({...jobFormData, job_title: e.target.value})} className="bg-black/40 border-white/10 text-white" placeholder="e.g. Senior Backend Engineer" />
                    </div>
                    <div className="space-y-2">
                      <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Company Name</label>
-                     <Input value={newJob.company_name} onChange={e => setNewJob({...newJob, company_name: e.target.value})} className="bg-black/40 border-white/10 text-white" placeholder="e.g. Google, Inc." />
+                     <Input value={jobFormData.company_name} onChange={e => setJobFormData({...jobFormData, company_name: e.target.value})} className="bg-black/40 border-white/10 text-white" placeholder="e.g. Google, Inc." />
                    </div>
                 </div>
                 <div className="space-y-2">
-                   <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Job URL (Optional)</label>
-                   <Input value={newJob.job_url} onChange={e => setNewJob({...newJob, job_url: e.target.value})} className="bg-black/40 border-white/10 text-white" placeholder="https://linkedin.com/jobs/..." />
+                   <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Job URL {jobFormData.id && '(Edit)'}</label>
+                   <Input value={jobFormData.job_url} onChange={e => setJobFormData({...jobFormData, job_url: e.target.value})} className="bg-black/40 border-white/10 text-white" placeholder="https://linkedin.com/jobs/..." />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Job Description</label>
-                  <Textarea value={newJob.job_description} onChange={e => setNewJob({...newJob, job_description: e.target.value})} className="bg-black/40 border-white/10 text-white min-h-[150px]" placeholder="Paste requirements..." />
+                  <Textarea value={jobFormData.job_description} onChange={e => setJobFormData({...jobFormData, job_description: e.target.value})} className="bg-black/40 border-white/10 text-white min-h-[150px]" placeholder="Paste requirements..." />
                 </div>
-                <Button type="submit" disabled={isSubmitting || !newJob.job_title || !newJob.company_name || !newJob.job_description} className="w-full h-14 bg-cyan-accent text-black font-heading font-bold tracking-[0.2em] premium-touch">
-                  {isSubmitting ? 'ESTABLISHING TRACK...' : 'INITIALIZE TRACK'}
+                <Button type="submit" disabled={isSubmitting || !jobFormData.job_title || !jobFormData.company_name || !jobFormData.job_description} className="w-full h-14 bg-cyan-accent text-black font-heading font-bold tracking-[0.2em] premium-touch">
+                  {isSubmitting ? 'SYNCING...' : jobFormData.id ? 'SAVE CHANGES' : 'INITIALIZE TRACK'}
                 </Button>
               </form>
             </motion.div>
@@ -259,6 +314,27 @@ export default function DashboardPage() {
       </AnimatePresence>
 
       <main className="pt-24 px-6 md:px-12 max-w-[1400px] mx-auto pb-40">
+        {/* 📊 ANALYTICS DASHBOARD */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-12">
+           <button 
+              onClick={() => { setStatusFilter(null); playHaptic(); }}
+              className={`p-4 border transition-all text-left group ${!statusFilter ? 'bg-white/10 border-white/20' : 'bg-black/40 border-white/5 hover:border-white/10'}`}
+           >
+              <div className="text-[9px] uppercase font-mono text-white/40 group-hover:text-white/60 mb-1">ALL_TOTAL</div>
+              <div className="text-2xl font-heading text-white">{stats.total}</div>
+           </button>
+           {STATUS_ORDER.map(s => (
+             <button 
+                key={s}
+                onClick={() => { setStatusFilter(statusFilter === s ? null : s); playHaptic(); }}
+                className={`p-4 border transition-all text-left group ${statusFilter === s ? 'bg-white/10 border-white/20' : 'bg-black/40 border-white/5 hover:border-white/10'}`}
+             >
+                <div className={`text-[9px] uppercase font-mono mb-1 ${STATUS_CONFIG[s].color}`}>{s}</div>
+                <div className="text-2xl font-heading text-white">{stats[s as keyof typeof stats]}</div>
+             </button>
+           ))}
+        </div>
+
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-12">
           <div className="space-y-4">
             <motion.h2 initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="text-3xl md:text-5xl font-heading text-white tracking-tighter uppercase italic">Operative <span className="text-cyan-accent cyan-glow">Dashboard</span></motion.h2>
@@ -267,6 +343,9 @@ export default function DashboardPage() {
                  <div className={`w-1.5 h-1.5 rounded-full ${profileStatus === 'COMPLETE' ? 'bg-cyan-accent cyan-glow animate-pulse' : 'bg-white/20'}`} />
                  <span className="text-[9px] font-mono text-white/40 uppercase">PROFILE_SYNC: {profileStatus}</span>
                </div>
+               {statusFilter && (
+                 <button onClick={() => setStatusFilter(null)} className="text-[9px] font-mono text-cyan-accent hover:text-white transition-colors uppercase border-b border-cyan-accent/20">CLEAR_FILTER: {statusFilter}</button>
+               )}
             </div>
           </div>
 
@@ -275,7 +354,7 @@ export default function DashboardPage() {
               <LucideSearch className="w-4 h-4 text-white/20" />
               <input type="text" placeholder="FILTER_OBLIGATIONS..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-transparent border-none text-xs font-mono text-white focus:outline-none uppercase tracking-widest w-full" />
             </div>
-            <Button onClick={() => { setIsModalOpen(true); playHaptic(); }} className="bg-cyan-accent text-black font-heading font-bold h-12 px-8 premium-touch">NEW TRACK +</Button>
+            <Button onClick={() => { setJobFormData({id: null, job_title: '', company_name: '', job_description: '', job_url: ''}); setIsModalOpen(true); playHaptic(); }} className="bg-cyan-accent text-black font-heading font-bold h-12 px-8 premium-touch">NEW TRACK +</Button>
           </div>
         </div>
 
@@ -296,7 +375,7 @@ export default function DashboardPage() {
                           {/* 🔄 QUICK STATUS DROPDOWN */}
                           <div className="relative">
                              <button 
-                                onClick={() => { setActiveStatusDropdown(activeStatusDropdown === job.id ? null : job.id); playHaptic(); }}
+                                onClick={(e) => { e.stopPropagation(); setActiveStatusDropdown(activeStatusDropdown === job.id ? null : job.id); playHaptic(); }}
                                 className={`px-2 py-1 rounded-sm border border-white/5 flex items-center gap-1.5 transition-all text-[8px] font-bold uppercase ${STATUS_CONFIG[job.status]?.bg} ${STATUS_CONFIG[job.status]?.color} hover:bg-white/10`}
                              >
                                <StatusIcon className="w-3 h-3" />
@@ -310,7 +389,7 @@ export default function DashboardPage() {
                                     {STATUS_ORDER.map(s => (
                                       <button 
                                         key={s} 
-                                        onClick={() => handleUpdateStatus(job.id, s)}
+                                        onClick={(e) => { e.stopPropagation(); handleUpdateStatus(job.id, s); }}
                                         className={`w-full text-left px-3 py-2 text-[8px] uppercase font-bold tracking-widest hover:bg-white/5 transition-colors ${s === job.status ? 'text-cyan-accent bg-cyan-accent/5' : 'text-white/40'}`}
                                       >
                                         {s}
@@ -321,7 +400,10 @@ export default function DashboardPage() {
                              </AnimatePresence>
                           </div>
                           
-                          <span className="text-[9px] font-mono text-white/20">{new Date(job.created_at || '').toLocaleDateString()}</span>
+                          <div className="flex items-center gap-2">
+                             <button onClick={() => handleOpenEdit(job)} className="p-1 hover:bg-white/10 rounded-sm text-white/20 hover:text-white transition-all"><LucidePencil className="w-3 h-3" /></button>
+                             <span className="text-[9px] font-mono text-white/20">{new Date(job.created_at || '').toLocaleDateString()}</span>
+                          </div>
                         </div>
                         <CardTitle className="text-xl font-heading text-white group-hover:text-cyan-accent transition-colors truncate">{job.job_title}</CardTitle>
                         <CardDescription className="text-[10px] uppercase font-mono text-white/40 flex items-center gap-2">
@@ -349,8 +431,8 @@ export default function DashboardPage() {
                   </motion.div>
                 );
               })}
-              {jobs.length < (userData?.generations_limit + userData?.bonus_quota || 5) && (
-                <button onClick={() => { setIsModalOpen(true); playHaptic(); }} className="h-full min-h-[320px] border border-dashed border-white/10 hover:border-cyan-accent/40 bg-white/[0.02] flex flex-col items-center justify-center group">
+              {jobs.length < (userData?.generations_limit + userData?.bonus_quota || 5) && !statusFilter && (
+                <button onClick={() => { setJobFormData({id: null, job_title: '', company_name: '', job_description: '', job_url: ''}); setIsModalOpen(true); playHaptic(); }} className="h-full min-h-[320px] border border-dashed border-white/10 hover:border-cyan-accent/40 bg-white/[0.02] flex flex-col items-center justify-center group">
                    <LucidePlus className="w-8 h-8 text-white/20 group-hover:text-cyan-accent mb-4 transition-all" />
                    <span className="text-[10px] font-heading uppercase tracking-widest text-white/20 group-hover:text-white">Initialize Track {jobs.length + 1}</span>
                 </button>
@@ -359,6 +441,7 @@ export default function DashboardPage() {
           </AnimatePresence>
         )}
 
+        {/* ... Bottom stats ... */}
         <div className="mt-20 grid grid-cols-1 md:grid-cols-2 gap-6">
            <div className="p-8 glass-panel space-y-6 relative overflow-hidden">
               <h3 className="text-xl font-bold text-white italic uppercase tracking-tighter">Referral <span className="text-cyan-accent">Protocol</span></h3>
@@ -390,7 +473,7 @@ export default function DashboardPage() {
       <footer className="fixed bottom-0 left-0 w-full z-40 glass-panel px-8 py-3 flex justify-between items-center text-[9px] font-mono text-white/20 uppercase tracking-widest no-print">
         <div className="flex gap-6">
            <span>CLOUD_STATUS: STABLE</span>
-           <span>SECURE_SESSION V0.3</span>
+           <span>SECURE_SESSION V0.4</span>
         </div>
         <div className="hidden sm:block">QUOTA: {userData?.generations_used || 0} / {(userData?.generations_limit + userData?.bonus_quota) || 5}</div>
         <div className="flex gap-4">
