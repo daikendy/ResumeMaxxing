@@ -40,5 +40,10 @@ export const SITE_CONFIG = {
   mobile: {
     appId: "com.resumemaxxing.app",
     appName: "ResumeMaxxing",
+    downloads: {
+      android: "/downloads/app-release.apk", // Centralized for easy updates
+      ios: "Add to Home Screen",
+      version: "1.0.0-build.1"
+    }
   }
 };
