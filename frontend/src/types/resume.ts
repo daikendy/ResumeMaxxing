@@ -63,6 +63,7 @@ export interface TrackedJob {
   job_description: string;
   original_resume_id?: number;
   status: string;
+  job_url?: string; // ⚡ Added
   target_score?: number;
   resume_versions?: ResumeVersion[];
   created_at?: string;

@@ -1,8 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Dict, Any
 
 class MasterResumeCreate(BaseModel):
-    resume_data: Dict[str, Any]
+    # Support up to 1MB of JSON profile data
+    resume_data: Dict[str, Any] = Field(..., max_length=1000000)
 
 class MasterResumeResponse(BaseModel):
     id: int

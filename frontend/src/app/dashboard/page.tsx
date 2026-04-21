@@ -12,33 +12,35 @@ import { AuthGuard } from '@/components/AuthGuard';
 import { PremiumModal } from '@/components/PremiumModal';
 import {
   LucidePlus,
-  LucideTerminal,
   LucideBriefcase,
-  LucideArrowRight,
-  LucideLayoutDashboard,
-  LucidePlusCircle,
-  LucideSearch,
   LucideX,
   LucideTrash2,
-  LucideSettings,
-  LucideShare2,
   LucideCopy,
   LucideShieldCheck,
-  LucideAlertCircle
+  LucideAlertCircle,
+  LucideExternalLink,
+  LucideCheckCircle2,
+  LucideClock,
+  LucideFileText,
+  LucideSearch,
+  LucideChevronDown
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { TrackedJob } from '@/types/resume';
 
-interface TrackedJob {
-  id: number;
-  job_title: string;
-  company_name: string;
-  job_description: string;
-  status: string;
-  created_at: string;
-}
+// 🎨 Status Config: Colors and Icons for the "Industry Look"
+const STATUS_CONFIG: Record<string, { color: string, bg: string, icon: any }> = {
+  'bookmarked': { color: 'text-white/40', bg: 'bg-white/5', icon: LucideClock },
+  'applied': { color: 'text-cyan-accent', bg: 'bg-cyan-accent/10', icon: LucideCheckCircle2 },
+  'interviewing': { color: 'text-yellow-400', bg: 'bg-yellow-400/10', icon: LucideBriefcase },
+  'hired': { color: 'text-emerald-400', bg: 'bg-emerald-400/10', icon: LucideShieldCheck },
+  'rejected': { color: 'text-red-400', bg: 'bg-red-400/10', icon: LucideX },
+};
+
+const STATUS_ORDER = ['bookmarked', 'applied', 'interviewing', 'hired', 'rejected'];
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -52,7 +54,7 @@ export default function DashboardPage() {
   const [newJob, setNewJob] = useState({
     job_title: '',
     company_name: '',
-    job_description: ''
+    job_url: '' // ⚡ New field
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
@@ -62,6 +64,7 @@ export default function DashboardPage() {
   const [isRedeeming, setIsRedeeming] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [activeStatusDropdown, setActiveStatusDropdown] = useState<number | null>(null);
 
   const playHaptic = async (style = ImpactStyle.Light) => {
     try {
@@ -169,6 +172,25 @@ export default function DashboardPage() {
     }
   };
 
+  const handleUpdateStatus = async (jobId: number, newStatus: string) => {
+    playHaptic(ImpactStyle.Medium);
+    const originalJobs = [...jobs];
+    
+    // Optimistic UI Update
+    setJobs(jobs.map(j => j.id === jobId ? { ...j, status: newStatus } : j));
+    setActiveStatusDropdown(null);
+
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("No session");
+      await resumeService.updateTrackedJob(jobId, { status: newStatus }, token);
+      toast.success(`STATUS: ${newStatus.toUpperCase()}`);
+    } catch (err) {
+      setJobs(originalJobs); // Rollback
+      toast.error("SYNC FAILED", { description: "Application status could not be updated." });
+    }
+  };
+
   const handleDeleteJob = async (id: number) => {
     playHaptic(ImpactStyle.Light);
     if (confirmDeleteId !== id) {
@@ -192,30 +214,36 @@ export default function DashboardPage() {
 
   const filteredJobs = jobs.filter(job => 
     job.job_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.company_name.toLowerCase().includes(searchTerm.toLowerCase())
+    job.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans pb-20">
+      <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans pb-20 overflow-x-hidden">
       
       <AnimatePresence>
         {isModalOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="w-full max-w-xl bg-zinc-950 border border-white/10 p-8 relative">
-              <button onClick={() => { setIsModalOpen(false); playHaptic(); }} className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors premium-touch"><LucideX className="w-6 h-6" /></button>
+              <button onClick={() => { setIsModalOpen(false); playHaptic(); }} className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"><LucideX className="w-6 h-6" /></button>
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-cyan-muted border border-cyan-accent/20"><LucideBriefcase className="w-5 h-5 text-cyan-accent" /></div>
                 <h2 className="text-xl font-heading text-white uppercase tracking-[0.15em]">Track New Job</h2>
               </div>
               <form onSubmit={handleCreateJob} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Target Role</label>
-                  <Input value={newJob.job_title} onChange={e => setNewJob({...newJob, job_title: e.target.value})} className="bg-black/40 border-white/10 text-white" placeholder="e.g. Senior Backend Engineer" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <div className="space-y-2">
+                     <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Target Role</label>
+                     <Input value={newJob.job_title} onChange={e => setNewJob({...newJob, job_title: e.target.value})} className="bg-black/40 border-white/10 text-white" placeholder="e.g. Senior Backend Engineer" />
+                   </div>
+                   <div className="space-y-2">
+                     <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Company Name</label>
+                     <Input value={newJob.company_name} onChange={e => setNewJob({...newJob, company_name: e.target.value})} className="bg-black/40 border-white/10 text-white" placeholder="e.g. Google, Inc." />
+                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Company Name</label>
-                  <Input value={newJob.company_name} onChange={e => setNewJob({...newJob, company_name: e.target.value})} className="bg-black/40 border-white/10 text-white" placeholder="e.g. Google, Inc." />
+                   <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Job URL (Optional)</label>
+                   <Input value={newJob.job_url} onChange={e => setNewJob({...newJob, job_url: e.target.value})} className="bg-black/40 border-white/10 text-white" placeholder="https://linkedin.com/jobs/..." />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase font-heading text-white/40 tracking-[0.2em]">Job Description</label>
@@ -233,11 +261,11 @@ export default function DashboardPage() {
       <main className="pt-24 px-6 md:px-12 max-w-[1400px] mx-auto pb-40">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-12">
           <div className="space-y-4">
-            <motion.h2 initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="text-3xl md:text-5xl font-heading text-white tracking-tighter uppercase">Tracked <span className="text-cyan-accent cyan-glow">Opportunities</span></motion.h2>
+            <motion.h2 initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="text-3xl md:text-5xl font-heading text-white tracking-tighter uppercase italic">Operative <span className="text-cyan-accent cyan-glow">Dashboard</span></motion.h2>
             <div className="flex items-center gap-4">
                <div className="flex px-3 py-1 glass-panel rounded-full items-center gap-2">
                  <div className={`w-1.5 h-1.5 rounded-full ${profileStatus === 'COMPLETE' ? 'bg-cyan-accent cyan-glow animate-pulse' : 'bg-white/20'}`} />
-                 <span className="text-[9px] font-mono text-white/40 uppercase">PROFILE_STATUS: {profileStatus}</span>
+                 <span className="text-[9px] font-mono text-white/40 uppercase">PROFILE_SYNC: {profileStatus}</span>
                </div>
             </div>
           </div>
@@ -245,9 +273,9 @@ export default function DashboardPage() {
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <div className="flex items-center gap-4 border-b border-white/10 pb-2 min-w-[250px]">
               <LucideSearch className="w-4 h-4 text-white/20" />
-              <input type="text" placeholder="SEARCH_TRACKS..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-transparent border-none text-xs font-mono text-white focus:outline-none uppercase tracking-widest w-full" />
+              <input type="text" placeholder="FILTER_OBLIGATIONS..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-transparent border-none text-xs font-mono text-white focus:outline-none uppercase tracking-widest w-full" />
             </div>
-            <Button onClick={() => { setIsModalOpen(true); playHaptic(); }} className="bg-cyan-accent text-black font-heading font-bold h-12 px-8 premium-touch">New Track +</Button>
+            <Button onClick={() => { setIsModalOpen(true); playHaptic(); }} className="bg-cyan-accent text-black font-heading font-bold h-12 px-8 premium-touch">NEW TRACK +</Button>
           </div>
         </div>
 
@@ -258,31 +286,71 @@ export default function DashboardPage() {
         ) : (
           <AnimatePresence>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredJobs.map((job) => (
-                <motion.div key={job.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
-                  <Card className="bg-black/60 border-white/10 hover:border-cyan-accent/30 transition-all flex flex-col h-full min-h-[320px] glass-panel-heavy group relative overflow-hidden">
-                    <CardHeader>
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="px-2 py-0.5 bg-cyan-muted text-cyan-accent text-[8px] font-bold uppercase">{job.status}</div>
-                        <span className="text-[9px] font-mono text-white/20">{new Date(job.created_at).toLocaleDateString()}</span>
-                      </div>
-                      <CardTitle className="text-xl font-heading text-white group-hover:text-cyan-accent transition-colors truncate">{job.job_title}</CardTitle>
-                      <CardDescription className="text-[10px] uppercase font-mono text-white/40">{job.company_name}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex-grow">
-                      <p className="text-[10px] text-white/30 font-mono italic line-clamp-4">{job.job_description}</p>
-                    </CardContent>
-                    <CardFooter className="pt-4 border-t border-white/5 flex gap-2">
-                      <Button onClick={() => { router.push(`/editor?jobId=${job.id}`); playHaptic(); }} className="flex-grow bg-white/5 text-white text-[10px] font-heading font-bold h-10 premium-touch">Open Editor</Button>
-                      <Button variant="ghost" onClick={() => handleDeleteJob(job.id)} className={`w-10 h-10 p-0 transition-colors ${confirmDeleteId === job.id ? 'bg-red-500' : 'hover:bg-red-500/10 text-white/20'} border border-white/10 premium-touch`}>
-                        {confirmDeleteId === job.id ? <LucideAlertCircle className="w-4 h-4 animate-pulse" /> : <LucideTrash2 className="w-4 h-4" />}
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                </motion.div>
-              ))}
+              {filteredJobs.map((job) => {
+                const StatusIcon = STATUS_CONFIG[job.status]?.icon || LucideClock;
+                return (
+                  <motion.div key={job.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
+                    <Card className="bg-black/60 border-white/10 hover:border-cyan-accent/30 transition-all flex flex-col h-full min-h-[320px] glass-panel-heavy group relative overflow-hidden">
+                      <CardHeader>
+                        <div className="flex justify-between items-start mb-2">
+                          {/* 🔄 QUICK STATUS DROPDOWN */}
+                          <div className="relative">
+                             <button 
+                                onClick={() => { setActiveStatusDropdown(activeStatusDropdown === job.id ? null : job.id); playHaptic(); }}
+                                className={`px-2 py-1 rounded-sm border border-white/5 flex items-center gap-1.5 transition-all text-[8px] font-bold uppercase ${STATUS_CONFIG[job.status]?.bg} ${STATUS_CONFIG[job.status]?.color} hover:bg-white/10`}
+                             >
+                               <StatusIcon className="w-3 h-3" />
+                               {job.status}
+                               <LucideChevronDown className="w-3 h-3 opacity-40" />
+                             </button>
+
+                             <AnimatePresence>
+                               {activeStatusDropdown === job.id && (
+                                 <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} className="absolute top-full left-0 mt-2 w-32 bg-zinc-950 border border-white/10 shadow-2xl z-50 py-1">
+                                    {STATUS_ORDER.map(s => (
+                                      <button 
+                                        key={s} 
+                                        onClick={() => handleUpdateStatus(job.id, s)}
+                                        className={`w-full text-left px-3 py-2 text-[8px] uppercase font-bold tracking-widest hover:bg-white/5 transition-colors ${s === job.status ? 'text-cyan-accent bg-cyan-accent/5' : 'text-white/40'}`}
+                                      >
+                                        {s}
+                                      </button>
+                                    ))}
+                                 </motion.div>
+                               )}
+                             </AnimatePresence>
+                          </div>
+                          
+                          <span className="text-[9px] font-mono text-white/20">{new Date(job.created_at || '').toLocaleDateString()}</span>
+                        </div>
+                        <CardTitle className="text-xl font-heading text-white group-hover:text-cyan-accent transition-colors truncate">{job.job_title}</CardTitle>
+                        <CardDescription className="text-[10px] uppercase font-mono text-white/40 flex items-center gap-2">
+                          {job.company_name}
+                          {job.job_url && (
+                             <a href={job.job_url} target="_blank" rel="noopener noreferrer" className="p-1 hover:bg-white/10 rounded-sm text-cyan-accent/60 hover:text-cyan-accent transition-all">
+                                <LucideExternalLink className="w-3 h-3" />
+                             </a>
+                          )}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex-grow">
+                        <p className="text-[10px] text-white/20 font-mono italic line-clamp-3 leading-relaxed">{job.job_description}</p>
+                      </CardContent>
+                      <CardFooter className="pt-4 border-t border-white/5 flex gap-2">
+                        <Button onClick={() => { router.push(`/editor?jobId=${job.id}`); playHaptic(); }} className="flex-grow bg-white/5 text-white text-[10px] font-heading font-bold h-10 hover:bg-cyan-accent hover:text-black transition-all premium-touch">
+                           <LucideFileText className="w-3.5 h-3.5 mr-2" />
+                           Open Studio
+                        </Button>
+                        <Button variant="ghost" onClick={() => handleDeleteJob(job.id)} className={`w-10 h-10 p-0 transition-colors ${confirmDeleteId === job.id ? 'bg-red-500' : 'hover:bg-red-500/10 text-white/20'} border border-white/10 premium-touch`}>
+                          {confirmDeleteId === job.id ? <LucideAlertCircle className="w-4 h-4 animate-pulse" /> : <LucideTrash2 className="w-4 h-4" />}
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  </motion.div>
+                );
+              })}
               {jobs.length < (userData?.generations_limit + userData?.bonus_quota || 5) && (
-                <button onClick={() => { setIsModalOpen(true); playHaptic(); }} className="h-full min-h-[320px] border border-dashed border-white/10 hover:border-cyan-accent/40 bg-white/[0.02] flex flex-col items-center justify-center group premium-touch">
+                <button onClick={() => { setIsModalOpen(true); playHaptic(); }} className="h-full min-h-[320px] border border-dashed border-white/10 hover:border-cyan-accent/40 bg-white/[0.02] flex flex-col items-center justify-center group">
                    <LucidePlus className="w-8 h-8 text-white/20 group-hover:text-cyan-accent mb-4 transition-all" />
                    <span className="text-[10px] font-heading uppercase tracking-widest text-white/20 group-hover:text-white">Initialize Track {jobs.length + 1}</span>
                 </button>
@@ -293,24 +361,24 @@ export default function DashboardPage() {
 
         <div className="mt-20 grid grid-cols-1 md:grid-cols-2 gap-6">
            <div className="p-8 glass-panel space-y-6 relative overflow-hidden">
-              <h3 className="text-xl font-black text-white italic uppercase">Invite Uplink</h3>
+              <h3 className="text-xl font-bold text-white italic uppercase tracking-tighter">Referral <span className="text-cyan-accent">Protocol</span></h3>
               <div className="flex gap-2">
                  <div className="flex-grow p-4 bg-zinc-900 border border-zinc-800 flex items-center justify-between font-mono text-2xl text-cyan-accent italic">
                     {userData?.referral_code || '------'}
-                    <button onClick={() => { navigator.clipboard.writeText(userData?.referral_code || ''); toast.success('COPIED'); }} className="hover:text-white"><LucideCopy className="w-4 h-4" /></button>
+                    <button onClick={() => { navigator.clipboard.writeText(userData?.referral_code || ''); toast.success('PROTOCOL_COPIED'); }} className="hover:text-white"><LucideCopy className="w-4 h-4" /></button>
                  </div>
               </div>
            </div>
            <div className="p-8 glass-panel space-y-6">
               {userData?.referred_by ? (
                 <div className="flex flex-col items-center justify-center h-full text-emerald-500 font-mono text-[10px] uppercase tracking-widest animate-pulse">
-                   <LucideShieldCheck className="w-8 h-8 mb-2" /> Bonus Active
+                   <LucideShieldCheck className="w-8 h-8 mb-2" /> Security Bonus Active
                 </div>
               ) : (
                 <>
-                  <h3 className="text-xl font-black text-white italic uppercase">Redeem Bonus</h3>
+                  <h3 className="text-xl font-bold text-white italic uppercase tracking-tighter">Enter <span className="text-cyan-accent">Key</span></h3>
                   <div className="flex gap-2">
-                     <input type="text" placeholder="CODE" value={referralInput} onChange={(e) => setReferralInput(e.target.value.toUpperCase())} className="flex-grow p-4 bg-zinc-900 border border-zinc-800 text-white outline-none focus:border-cyan-accent" />
+                     <input type="text" placeholder="ACCESS_CODE" value={referralInput} onChange={(e) => setReferralInput(e.target.value.toUpperCase())} className="flex-grow p-4 bg-zinc-900 border border-zinc-800 text-white outline-none focus:border-cyan-accent font-mono" />
                      <Button onClick={handleRedeemCode} disabled={isRedeeming || !referralInput} className="bg-zinc-800 hover:bg-white hover:text-black h-14 px-8">ACTIVATE</Button>
                   </div>
                 </>
@@ -321,13 +389,13 @@ export default function DashboardPage() {
 
       <footer className="fixed bottom-0 left-0 w-full z-40 glass-panel px-8 py-3 flex justify-between items-center text-[9px] font-mono text-white/20 uppercase tracking-widest no-print">
         <div className="flex gap-6">
-           <span>CLOUD: STABLE</span>
-           <span>V0.2 PREMIUM</span>
+           <span>CLOUD_STATUS: STABLE</span>
+           <span>SECURE_SESSION V0.3</span>
         </div>
-        <div className="hidden sm:block">AI UNLOCKED: {userData?.generations_used || 0} / {(userData?.generations_limit + userData?.bonus_quota) || 5}</div>
+        <div className="hidden sm:block">QUOTA: {userData?.generations_used || 0} / {(userData?.generations_limit + userData?.bonus_quota) || 5}</div>
         <div className="flex gap-4">
-           <Link href="/terms" className="hover:text-white">Terms</Link>
-           <Link href="/privacy" className="hover:text-white">Privacy</Link>
+           <Link href="/terms" className="hover:text-white">Privacy</Link>
+           <Link href="/privacy" className="hover:text-white">Security</Link>
         </div>
       </footer>
 

@@ -10,9 +10,7 @@ from auth_utils import get_current_user, sync_user_to_db
 from database import get_db
 from models.job_model import TrackedJob
 from models.user_model import User
-from schemas.job_schema import JobCreate, JobResponse
-from utils.exceptions import LimitReachedException
-
+from schemas.job_schema import JobCreate, JobResponse, JobUpdate
 from utils.exceptions import LimitReachedException
 from utils.sanitization import sanitize_text
 
@@ -72,6 +70,7 @@ async def create_job(payload: JobCreate, current_user: dict = Depends(get_curren
         company_name=sanitize_text(payload.company_name),
         job_title=sanitize_text(payload.job_title),
         job_description=sanitize_text(payload.job_description),
+        job_url=payload.job_url,
         status='bookmarked'
     )
     
@@ -96,3 +95,32 @@ async def delete_tracked_job(job_id: int, current_user: dict = Depends(get_curre
     await db.delete(job)
     await db.commit()
     return {"status": "success", "message": f"Job {job_id} and associated resumes deleted"}
+
+@router.patch("/{job_id}", response_model=JobResponse)
+async def update_tracked_job(job_id: int, payload: JobUpdate, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Update a tracked job (e.g., status, job_url)."""
+    await sync_user_to_db(current_user, db)
+    
+    result = await db.execute(
+        select(TrackedJob)
+        .options(selectinload(TrackedJob.resume_versions)) # ⚡ Fix: Eager load relationships
+        .filter(TrackedJob.id == job_id, TrackedJob.user_id == current_user["id"])
+    )
+    job = result.scalars().first()
+    
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found or access denied")
+    
+    # Apply updates dynamically
+    if payload.status is not None:
+        job.status = payload.status
+    if payload.job_url is not None:
+        job.job_url = payload.job_url
+    if payload.job_title is not None:
+        job.job_title = sanitize_text(payload.job_title)
+    if payload.company_name is not None:
+        job.company_name = sanitize_text(payload.company_name)
+    
+    await db.commit()
+    await db.refresh(job)
+    return job

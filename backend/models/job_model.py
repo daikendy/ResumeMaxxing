@@ -11,6 +11,7 @@ class TrackedJob(Base):
     company_name = Column(String(255), nullable=False)
     job_title = Column(String(255), nullable=False)
     job_description = Column(Text)
+    job_url = Column(String(1000), nullable=True) # ⚡ New Field
     status = Column(Enum('bookmarked', 'applied', 'interviewing', 'rejected', 'hired', name="status_enum"), default='bookmarked')
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
