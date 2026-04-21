@@ -330,11 +330,12 @@ export default function MasterResumePage() {
         </aside>
 
         <div className="lg:col-span-6 space-y-16">
+          {/* 01. SUMMARY */}
           <section id="summary" className="space-y-6">
             <div className="flex justify-between items-end">
                <div className="flex items-baseline gap-4">
                   <span className="text-4xl font-heading text-white/5 italic">01</span>
-                  <h2 className="text-xl font-heading text-white tracking-widest uppercase">The Summary</h2>
+                  <h2 className="text-xl font-heading text-white tracking-widest uppercase">Professional Summary</h2>
                </div>
                {focusedField === 'summary' && <span className={`text-[9px] font-mono mb-1 ${getCounterColor(summary.length, LIMITS.SUMMARY)}`}>{summary.length}/{LIMITS.SUMMARY}</span>}
             </div>
@@ -345,24 +346,26 @@ export default function MasterResumePage() {
                 onBlur={() => setFocusedField(null)}
                 onChange={e => setSummary(validateInput(e.target.value, LIMITS.SUMMARY))}
                 className="bg-transparent border-white/10 text-white font-mono placeholder:text-white/10 focus:border-cyan-accent min-h-[140px] text-xs leading-relaxed"
-                placeholder="Briefly pitch your core expertise..."
+                placeholder="Briefly explain your core professional expertise..."
               />
             </div>
           </section>
 
+          {/* 02. CONTACT */}
           <section id="contact" className="space-y-6">
             <div className="flex items-baseline gap-4">
               <span className="text-4xl font-heading text-white/5 italic">02</span>
-              <h2 className="text-xl font-heading text-white tracking-widest uppercase">Personal Intel</h2>
+              <h2 className="text-xl font-heading text-white tracking-widest uppercase">Contact Details</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 border border-white/10 bg-black/40 backdrop-blur-sm">
               {[
-                { label: 'Full Name', key: 'name', ph: 'Agent 47', max: LIMITS.NAME },
-                { label: 'Email', key: 'email', ph: 'agent@maxxing.io', max: LIMITS.EMAIL },
-                { label: 'GitHub', key: 'github', ph: 'github.com/agent', max: LIMITS.SOCIAL },
-                { label: 'LinkedIn', key: 'linkedin', ph: 'linkedin.com/in/agent', max: LIMITS.SOCIAL }
+                { label: 'Full Name', key: 'name', ph: 'John Doe', max: LIMITS.NAME },
+                { label: 'Email', key: 'email', ph: 'john@example.com', max: LIMITS.EMAIL },
+                { label: 'Phone Number', key: 'phone', ph: '+1 (555) 000-0000', max: LIMITS.PHONE },
+                { label: 'GitHub', key: 'github', ph: 'github.com/johndoe', max: LIMITS.SOCIAL },
+                { label: 'LinkedIn', key: 'linkedin', ph: 'linkedin.com/in/johndoe', max: LIMITS.SOCIAL }
               ].map(f => (
-                <div key={f.key} className="space-y-1">
+                <div key={f.key} className={`space-y-1 ${f.key === 'github' ? 'md:col-span-2' : ''}`}>
                    <div className="flex justify-between items-center">
                       <label className="text-[10px] uppercase font-heading text-white/40">{f.label}</label>
                       {focusedField === f.key && <span className={`text-[8px] font-mono ${getCounterColor((contact as any)[f.key].length, f.max)}`}>{(contact as any)[f.key].length}/{f.max}</span>}
@@ -380,19 +383,22 @@ export default function MasterResumePage() {
             </div>
           </section>
 
+          {/* 03. EXPERIENCE */}
           <section id="experience" className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="flex items-baseline gap-4">
                 <span className="text-4xl font-heading text-white/5 italic">03</span>
-                <h2 className="text-xl font-heading text-white tracking-widest uppercase">Deployments</h2>
+                <h2 className="text-xl font-heading text-white tracking-widest uppercase">Work Experience</h2>
               </div>
               <Button variant="ghost" className="text-[10px] text-cyan-accent uppercase" onClick={addExperience}>+ Add Job</Button>
             </div>
             {experience.map((exp, expIdx) => (
               <div key={expIdx} className="border border-white/10 bg-black/40 p-8 space-y-6 relative group">
                 <button onClick={() => removeExperience(expIdx)} className="absolute top-4 right-4 text-white/10 hover:text-red-500 transition-colors p-1"><LucideTrash2 className="w-4 h-4" /></button>
-                <div className="grid grid-cols-2 gap-6">
-                  {[['title', 'Role', LIMITS.TITLE], ['company', 'Agency', LIMITS.COMPANY]].map(([k, l, m]: any) => (
+                
+                {/* Title & Company */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {[['title', 'Job Title', LIMITS.TITLE], ['company', 'Company', LIMITS.COMPANY]].map(([k, l, m]: any) => (
                     <div key={k} className="space-y-1">
                       <div className="flex justify-between items-baseline">
                          <label className="text-[10px] uppercase text-white/40">{l}</label>
@@ -408,6 +414,38 @@ export default function MasterResumePage() {
                     </div>
                   ))}
                 </div>
+
+                {/* Dates & Location */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                   {[
+                      { label: 'Start Date', key: 'startDate', ph: 'Jan 2020' },
+                      { label: 'End Date', key: 'endDate', ph: 'Present' },
+                      { label: 'Location', key: 'location', ph: 'Remote' }
+                   ].map(f => (
+                     <div key={f.key} className="space-y-1">
+                        <label className="text-[10px] uppercase text-white/40">{f.label}</label>
+                        <Input 
+                           value={(exp as any)[f.key] || ''} 
+                           onChange={e => updateExp(expIdx, f.key, e.target.value)} 
+                           placeholder={f.ph}
+                           className="bg-transparent border-white/10 font-mono text-xs h-9" 
+                        />
+                     </div>
+                   ))}
+                </div>
+
+                {/* Tech Stack */}
+                <div className="space-y-1">
+                   <label className="text-[10px] uppercase text-white/40">Technologies & Tools</label>
+                   <Input 
+                      value={exp.technologies || ''} 
+                      onChange={e => updateExp(expIdx, 'technologies', e.target.value)} 
+                      placeholder="React, TypeScript, Node.js..."
+                      className="bg-transparent border-white/10 font-mono text-xs h-9" 
+                   />
+                </div>
+
+                {/* Bullets */}
                 <div className="space-y-4">
                    {exp.bullets.map((b, bIdx) => (
                      <div key={bIdx} className="relative group/bullet">
@@ -425,8 +463,92 @@ export default function MasterResumePage() {
                         <button onClick={() => removeBullet(expIdx, bIdx)} className="absolute bottom-2 right-2 opacity-0 group-hover/bullet:opacity-100 text-red-500"><LucideTrash2 className="w-3 h-3" /></button>
                      </div>
                    ))}
-                   <Button variant="ghost" onClick={() => addBullet(expIdx)} className="w-full border border-dashed border-white/5 text-[9px] uppercase text-white/20 hover:text-cyan-accent">+ Add New Achievement Line</Button>
+                   <Button variant="ghost" onClick={() => addBullet(expIdx)} className="w-full border border-dashed border-white/5 text-[9px] uppercase text-white/20 hover:text-cyan-accent">+ Add New Point</Button>
                 </div>
+              </div>
+            ))}
+          </section>
+
+          {/* 04. EDUCATION */}
+          <section id="education" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-baseline gap-4">
+                <span className="text-4xl font-heading text-white/5 italic">04</span>
+                <h2 className="text-xl font-heading text-white tracking-widest uppercase">Education</h2>
+              </div>
+              <Button variant="ghost" className="text-[10px] text-cyan-accent uppercase" onClick={addEducation}>+ Add School</Button>
+            </div>
+            <div className="space-y-4">
+              {education.map((edu, idx) => (
+                <div key={idx} className="border border-white/10 bg-black/40 p-6 space-y-4 relative group">
+                   <button onClick={() => removeEducation(idx)} className="absolute top-4 right-4 text-white/10 hover:text-red-500"><LucideTrash2 className="w-4 h-4" /></button>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+                      <div><label className="text-[10px] uppercase text-white/40 block mb-1">Institution</label><Input value={edu.institution} onChange={e => updateEdu(idx, 'institution', e.target.value)} className="bg-transparent border-white/10" /></div>
+                      <div><label className="text-[10px] uppercase text-white/40 block mb-1">Degree</label><Input value={edu.degree} onChange={e => updateEdu(idx, 'degree', e.target.value)} className="bg-transparent border-white/10" /></div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div><label className="text-[10px] uppercase text-white/40 block mb-1">Year</label><Input value={edu.year} onChange={e => updateEdu(idx, 'year', e.target.value)} className="bg-transparent border-white/10" /></div>
+                        <div><label className="text-[10px] uppercase text-white/40 block mb-1">GPA</label><Input value={edu.gpa} onChange={e => updateEdu(idx, 'gpa', e.target.value)} className="bg-transparent border-white/10" /></div>
+                      </div>
+                      <div><label className="text-[10px] uppercase text-white/40 block mb-1">Location</label><Input value={edu.location} onChange={e => updateEdu(idx, 'location', e.target.value)} className="bg-transparent border-white/10" /></div>
+                   </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* 05. SKILLS */}
+          <section id="skills" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-baseline gap-4">
+                <span className="text-4xl font-heading text-white/5 italic">05</span>
+                <h2 className="text-xl font-heading text-white tracking-widest uppercase">Skills & Tools</h2>
+              </div>
+              <Button variant="ghost" className="text-[10px] text-cyan-accent uppercase" onClick={addSkill}>+ Add Skill</Button>
+            </div>
+            <div className="flex flex-wrap gap-2 p-6 border border-white/10 bg-black/40">
+               {skills.map((skill, idx) => (
+                 <div key={idx} className="relative group">
+                    <Input value={skill} onChange={e => updateSkill(idx, e.target.value)} className="w-32 bg-transparent border-white/10 text-[10px] font-mono h-8 uppercase" />
+                    <button onClick={() => removeSkill(idx)} className="absolute right-1 top-1 opacity-0 group-hover:opacity-100 text-red-500"><LucideTrash2 className="w-3 h-3" /></button>
+                 </div>
+               ))}
+               {skills.length === 0 && <span className="text-[10px] text-white/20 font-mono italic">NO_SKILLS_RECORDED</span>}
+            </div>
+          </section>
+
+          {/* 06. PROJECTS */}
+          <section id="projects" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-baseline gap-4">
+                <span className="text-4xl font-heading text-white/5 italic">06</span>
+                <h2 className="text-xl font-heading text-white tracking-widest uppercase">Key Projects</h2>
+              </div>
+              <Button variant="ghost" className="text-[10px] text-cyan-accent uppercase" onClick={addProject}>+ Add Project</Button>
+            </div>
+            {projects.map((proj, idx) => (
+              <div key={idx} className="border border-white/10 bg-black/40 p-8 space-y-4 relative">
+                 <button onClick={() => removeProject(idx)} className="absolute top-4 right-4 text-white/10 hover:text-red-500"><LucideTrash2 className="w-4 h-4" /></button>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-baseline">
+                         <label className="text-[10px] uppercase text-white/40">Title</label>
+                         {focusedField === `proj-${idx}-title` && <span className={`text-[8px] font-mono ${getCounterColor(proj.title.length, LIMITS.TITLE || 200)}`}>{proj.title.length}/{LIMITS.TITLE || 200}</span>}
+                      </div>
+                      <Input value={proj.title} onFocus={() => setFocusedField(`proj-${idx}-title`)} onBlur={() => setFocusedField(null)} onChange={e => updateProject(idx, 'title', e.target.value)} className="bg-transparent border-white/10 font-mono text-xs h-9" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                       <div className="space-y-1"><label className="text-[10px] uppercase text-white/40">Start</label><Input value={proj.startDate} onChange={e => updateProject(idx, 'startDate', e.target.value)} className="bg-transparent border-white/10 font-mono text-xs h-9" /></div>
+                       <div className="space-y-1"><label className="text-[10px] uppercase text-white/40">End</label><Input value={proj.endDate} onChange={e => updateProject(idx, 'endDate', e.target.value)} className="bg-transparent border-white/10 font-mono text-xs h-9" /></div>
+                    </div>
+                 </div>
+                 <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                       <label className="text-[10px] uppercase text-white/40">Description</label>
+                       {focusedField === `proj-${idx}-desc` && <span className={`text-[8px] font-mono ${getCounterColor(proj.description.length, LIMITS.PROJECT_DESC)}`}>{proj.description.length}/{LIMITS.PROJECT_DESC}</span>}
+                    </div>
+                    <Textarea value={proj.description} onFocus={() => setFocusedField(`proj-${idx}-desc`)} onBlur={() => setFocusedField(null)} onChange={e => updateProject(idx, 'description', e.target.value)} className="bg-transparent border-white/5 text-[11px] font-mono min-h-[80px]" />
+                 </div>
+                 <div className="space-y-1"><label className="text-[10px] uppercase text-white/40">Tech Stack</label><Input value={proj.technologies} onChange={e => updateProject(idx, 'technologies', e.target.value)} className="bg-transparent border-white/10 font-mono text-xs h-9" /></div>
               </div>
             ))}
           </section>

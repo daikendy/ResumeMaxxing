@@ -506,29 +506,35 @@ export default function DashboardPage() {
           </AnimatePresence>
         )}
 
-        {/* ... Bottom stats ... */}
+        {/* 🎫 REFERRAL SYSTEM */}
         <div className="mt-20 grid grid-cols-1 md:grid-cols-2 gap-6">
-           <div className="p-8 glass-panel space-y-6 relative overflow-hidden">
-              <h3 className="text-xl font-bold text-white italic uppercase tracking-tighter">Referral <span className="text-cyan-accent">Protocol</span></h3>
+           {/* LEFT: MY CODE */}
+           <div className="p-8 glass-panel flex flex-col justify-between relative overflow-hidden h-[180px]">
+              <div className="flex items-center justify-between h-8 mb-6">
+                <h3 className="text-xl font-bold text-white italic uppercase tracking-tighter">Referral Prot<span className="text-cyan-accent">ocol</span></h3>
+                <div className="text-[9px] font-mono text-white/20 uppercase tracking-[0.2em]">Unique_ID</div>
+              </div>
               <div className="flex gap-2">
                  <div className="flex-grow p-4 bg-zinc-900 border border-zinc-800 flex items-center justify-between font-mono text-2xl text-cyan-accent italic">
                     {userData?.referral_code || '------'}
-                    <button onClick={() => { navigator.clipboard.writeText(userData?.referral_code || ''); toast.success('PROTOCOL_COPIED'); }} className="hover:text-white"><LucideCopy className="w-4 h-4" /></button>
+                    <button onClick={() => { navigator.clipboard.writeText(userData?.referral_code || ''); toast.success('PROTOCOL_COPIED'); }} className="hover:text-white/60 transition-colors"><LucideCopy className="w-5 h-5" /></button>
                  </div>
               </div>
            </div>
-           <div className="p-8 glass-panel space-y-6">
+
+           {/* RIGHT: ACTIVATE CODE */}
+           <div className="p-8 glass-panel flex flex-col justify-between relative h-[180px]">
               {userData?.referred_by ? (
                 <div className="flex flex-col items-center justify-center h-full text-emerald-500 font-mono text-[10px] uppercase tracking-widest animate-pulse">
                    <LucideShieldCheck className="w-8 h-8 mb-2" /> Security Bonus Active
                 </div>
               ) : (
                 <>
-                  <div className="flex justify-between items-center mb-1">
+                  <div className="flex justify-between items-center h-8 mb-6">
                      <h3 className="text-xl font-bold text-white italic uppercase tracking-tighter">Enter <span className="text-cyan-accent">Key</span></h3>
                      {referralInput.length > 0 && <span className={`text-[9px] font-mono ${getCounterColor(referralInput.length, LIMITS.REFERRAL)}`}>{referralInput.length}/{LIMITS.REFERRAL}</span>}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 h-14">
                      <input 
                         type="text" 
                         placeholder="ACCESS_CODE" 
@@ -542,9 +548,9 @@ export default function DashboardPage() {
                               playHaptic(ImpactStyle.Heavy);
                            }
                         }} 
-                        className="flex-grow p-4 bg-zinc-900 border border-zinc-800 text-white outline-none focus:border-cyan-accent font-mono" 
+                        className="flex-grow px-4 bg-zinc-900 border border-zinc-800 text-white outline-none focus:border-cyan-accent font-mono text-lg" 
                      />
-                     <Button onClick={handleRedeemCode} disabled={isRedeeming || referralInput.length !== LIMITS.REFERRAL} className="bg-zinc-800 hover:bg-white hover:text-black h-14 px-8">ACTIVATE</Button>
+                     <Button onClick={handleRedeemCode} disabled={isRedeeming || referralInput.length !== LIMITS.REFERRAL} className="bg-zinc-800 hover:bg-white hover:text-black h-full px-8 font-bold tracking-widest transition-all">ACTIVATE</Button>
                   </div>
                 </>
               )}
