@@ -22,6 +22,9 @@
   --shadow-cyan: 0 0 10px rgba(0, 240, 255, 0.4);
   --shadow-cyan-intense: 0 0 20px rgba(0, 240, 255, 0.6);
 
+  --spacing-safe-top: var(--safe-area-top);
+  --spacing-safe-bottom: var(--safe-area-bottom);
+
   @keyframes scan {
     0% {
       transform: translateY(-100%);

@@ -9,6 +9,7 @@ import { PremiumModal } from '@/components/PremiumModal';
 import { toast } from 'sonner';
 import { useResumeStore } from '@/store/useResumeStore';
 import { ImpactStyle, Haptics } from '@capacitor/haptics';
+import { SITE_CONFIG } from '@/lib/config';
 
 // New Atomic Components (Centralized)
 import { EditorToolbar } from '@/components/editor/EditorToolbar';
@@ -110,11 +111,42 @@ export default function EditorClient({ jobId }: { jobId: string }) {
   }, []);
 
   // 5. Root Actions
-  const handlePrint = () => {
-    const originalTitle = document.title;
-    document.title = "ResumeMaxxing";
-    window.print();
-    setTimeout(() => { document.title = originalTitle; }, 1000);
+  const handlePrint = async () => {
+    const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform();
+    
+    if (isNative) {
+      const element = document.getElementById('printable-resume-mount');
+      if (!element) return;
+
+      const opt = {
+        margin: 0,
+        filename: `${SITE_CONFIG.name}_Resume.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: store.pageSize === 'A4' ? 'a4' : 'letter', orientation: 'portrait' }
+      };
+
+      toast.loading("ARCHITECTING PDF...");
+      
+      try {
+        // @ts-ignore - html2pdf is traditionally imported this way
+        const html2pdf = (await import('html2pdf.js')).default;
+        // @ts-ignore - html2pdf options can be complex for untyped JS lib
+        const pdfBlob = await html2pdf().from(element).set(opt).output('blob');
+        
+        const { shareNativeFile } = await import('@/lib/utils/nativeShare');
+        await shareNativeFile(pdfBlob, `${SITE_CONFIG.name}_Resume.pdf`);
+        toast.dismiss();
+      } catch (err) {
+        console.error("PDF SHARE ERROR:", err);
+        toast.error("NATIVE EXPORT FAILED");
+      }
+    } else {
+      const originalTitle = document.title;
+      document.title = SITE_CONFIG.name;
+      window.print();
+      setTimeout(() => { document.title = originalTitle; }, 1000);
+    }
   };
 
   const handleGenerate = async () => {

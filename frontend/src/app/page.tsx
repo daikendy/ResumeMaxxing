@@ -39,7 +39,7 @@ export default function Home() {
           </h1>
 
           <p className="max-w-2xl mx-auto text-sm md:text-lg font-mono text-white/40 uppercase tracking-[0.2em] leading-relaxed mb-12 animate-in fade-in slide-in-from-bottom-12 duration-700">
-            The AI Resume Architect engineered for **Software Engineers**. Zero jargon. Total precision. **ATS-verified exports** built for technical recruiters.
+            The AI Resume Architect engineered for <strong className="text-white">Software Engineers</strong>. Zero jargon. Total precision. <strong className="text-white">ATS-verified exports</strong> built for technical recruiters.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 w-full animate-in fade-in slide-in-from-bottom-16 duration-700">

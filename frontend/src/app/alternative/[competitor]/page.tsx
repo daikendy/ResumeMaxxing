@@ -78,6 +78,14 @@ const COMPETITORS: Record<string, CompetitorData> = {
   }
 };
 
+export function generateStaticParams() {
+  return [
+    { competitor: 'teal' },
+    { competitor: 'novoresume' },
+    { competitor: 'zety' },
+  ];
+}
+
 export async function generateMetadata({ params }: { params: { competitor: string } }): Promise<Metadata> {
   const competitor = COMPETITORS[params.competitor.toLowerCase()];
   if (!competitor) return { title: "Alternative Not Found" };
