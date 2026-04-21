@@ -33,7 +33,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 w-full z-[100] glass-panel-heavy px-4 sm:px-8 pt-safe-top pb-3 flex justify-between items-center no-print border-b border-white/5">
+      <nav className="fixed top-0 left-0 w-full z-[100] glass-panel-heavy px-4 sm:px-8 pt-safe-top pb-safe-top flex justify-between items-center no-print border-b border-white/5 min-h-[70px] sm:min-h-[85px]">
         {/* Brand Section */}
         <div className="flex items-center gap-3">
           <Link 

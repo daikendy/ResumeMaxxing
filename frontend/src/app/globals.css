@@ -85,6 +85,11 @@
     user-select: none;
   }
 
+  /* Utility to hide marketing clutter on native apps */
+  .no-native-app {
+    display: none !important;
+  }
+
   /* Re-enable selection for content areas */
   article, p, h1, h2, h3, h4, span, input, textarea, [contenteditable="true"] {
     -webkit-user-select: text;

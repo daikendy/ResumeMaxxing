@@ -2,11 +2,21 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { LucideTerminal, LucideArrowRight, LucideMail } from 'lucide-react';
+import { LucideTerminal, LucideArrowRight } from 'lucide-react';
 import { SITE_CONFIG } from '@/lib/config';
 import { toast } from 'sonner';
+import { Capacitor } from '@capacitor/core';
 
 export default function Footer() {
+  const [isNative, setIsNative] = React.useState(false);
+
+  React.useEffect(() => {
+    // Check if running on native platform (Android/iOS)
+    if (Capacitor.getPlatform() !== 'web') {
+      setIsNative(true);
+    }
+  }, []);
+
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Integrate with actual newsletter API (Loops, Resend, etc.)
@@ -15,6 +25,8 @@ export default function Footer() {
     });
     (e.target as HTMLFormElement).reset();
   };
+
+  if (isNative) return null;
 
   return (
     <footer className="w-full bg-black border-t border-white/5 pt-20 pb-12 px-8 no-print">
@@ -92,9 +104,6 @@ export default function Footer() {
         <span className="text-[9px] font-mono text-white/20 uppercase tracking-[0.4em]">
           © {new Date().getFullYear()} {SITE_CONFIG.name}. V{SITE_CONFIG.version} - ALL SYSTEMS OPERATIONAL.
         </span>
-        <div className="flex gap-4">
-           {/* Social links could go here */}
-        </div>
       </div>
     </footer>
   );

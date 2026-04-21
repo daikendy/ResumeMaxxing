@@ -15,6 +15,8 @@ import {
   LucideInfo
 } from 'lucide-react';
 
+import Footer from '@/components/Footer';
+
 interface CompetitorData {
   name: string;
   slug: string;
@@ -197,6 +199,7 @@ export default async function AlternativePage({ params }: { params: Promise<{ co
         </div>
       </section>
 
+      <Footer />
     </div>
   );
 }
