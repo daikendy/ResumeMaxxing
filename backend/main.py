@@ -14,6 +14,8 @@ from database import get_db
 from routers import resume_router, user_router, job_router, webhook_router
 from utils.exceptions import ResumeMaxxingException
 from utils.logging_config import setup_logging, logger
+from utils.limiter import limiter
+from slowapi.errors import RateLimitExceeded
 
 # 📝 Initialize Logging
 setup_logging()
@@ -23,6 +25,7 @@ app = FastAPI(
     description="The backend API for ResumeMaxxing SaaS",
     version="0.1.0"
 )
+app.state.limiter = limiter
 
 # 📡 THE "UNBLOCKER": Proactive CORS Hardening
 app.add_middleware(
@@ -47,6 +50,19 @@ async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
         content={"status": "error", "code": "INTERNAL_SERVER_ERROR", "message": "An unexpected system error occurred."}
+    )
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exception_handler(request: Request, exc: RateLimitExceeded):
+    """Handler for when a user hits the rate limit guard."""
+    logger.warning("RATE_LIMIT_HIT", path=request.url.path, ip=request.client.host if request.client else "unknown")
+    return JSONResponse(
+        status_code=429,
+        content={
+            "status": "error", 
+            "code": "RATE_LIMIT_EXCEEDED", 
+            "message": "Shields Up! You are moving too fast. Please wait a few seconds and try again."
+        }
     )
 
 # 📡 TELEMETRY: Request/Response Logging Middleware

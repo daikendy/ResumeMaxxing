@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -13,6 +13,7 @@ from models.user_model import User
 from schemas.job_schema import JobCreate, JobResponse, JobUpdate
 from utils.exceptions import LimitReachedException
 from utils.sanitization import sanitize_text
+from utils.limiter import limiter
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
@@ -46,7 +47,8 @@ async def get_job_by_id(job_id: int, current_user: dict = Depends(get_current_us
     return job
 
 @router.post("/", response_model=JobResponse)
-async def create_job(payload: JobCreate, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+@limiter.limit("30/minute") # 🛡️ Guard active 
+async def create_job(request: Request, payload: JobCreate, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """Create a new job for the user."""
     await sync_user_to_db(current_user, db)
     user_id = current_user["id"]

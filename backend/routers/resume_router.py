@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,11 +11,13 @@ from models.user_model import User
 from schemas.resume_schema import ResumeCreate, ResumeResponse
 from services.ai_service import tailor_resume
 from utils.exceptions import QuotaExceededException
+from utils.limiter import limiter
 
 router = APIRouter(prefix="/resumes", tags=["Resumes"])
 
 @router.post("/generate", response_model=ResumeResponse)
-async def generate_tailored_resume(payload: ResumeCreate, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute") # 🛡️ Shield active
+async def generate_tailored_resume(request: Request, payload: ResumeCreate, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """
     Takes the user's master profile and a tracked job, 
     calls OpenAI to tailor the resume, and saves the result.

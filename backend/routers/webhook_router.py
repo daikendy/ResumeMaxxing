@@ -7,6 +7,7 @@ from svix.webhooks import Webhook, WebhookVerificationError
 from database import get_db
 from crud import user_crud
 from utils.logging_config import logger
+from utils.limiter import limiter
 
 router = APIRouter(
     prefix="/api/webhooks",
@@ -17,6 +18,7 @@ router = APIRouter(
 CLERK_WEBHOOK_SECRET = os.getenv("CLERK_WEBHOOK_SECRET", "whsec_test_secret_for_dev")
 
 @router.post("/clerk")
+@limiter.limit("60/minute") # 🛡️ Stability Shield
 async def clerk_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     """ listens for events from Clerk (like user deletion) and syncs our database. """
     

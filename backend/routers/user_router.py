@@ -1,7 +1,7 @@
 import io
 
 import PyPDF2
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,6 +15,7 @@ from schemas.master_resume_schema import MasterResumeCreate, MasterResumeRespons
 from schemas.user_schema import UserResponse, RedeemCodeRequest
 from services.ai_service import extract_resume_data
 from utils.sanitization import sanitize_data
+from utils.limiter import limiter
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -47,7 +48,8 @@ async def save_master_resume(payload: MasterResumeCreate, current_user: dict = D
     return db_resume
 
 @router.post("/upload-resume")
-async def upload_resume(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db), file: UploadFile = File(...)):
+@limiter.limit("5/minute") # 🛡️ Strict AI Shield
+async def upload_resume(request: Request, file: UploadFile = File(...), current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """Extract data from a PDF resume using OCR/Text extraction and AI parsing."""
     await sync_user_to_db(current_user, db)
     
@@ -102,7 +104,8 @@ async def get_user_me(current_user: dict = Depends(get_current_user), db: AsyncS
     return user
 
 @router.post("/redeem-code")
-async def redeem_code(payload: RedeemCodeRequest, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute") # 🛑 Anti-Fraud Shield
+async def redeem_code(request: Request, payload: RedeemCodeRequest, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """Redeem a referral code for bonus resume generations."""
     await sync_user_to_db(current_user, db)
     result = await user_crud.redeem_referral_code(db, current_user["id"], payload.code)
