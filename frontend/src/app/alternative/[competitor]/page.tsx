@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { SITE_CONFIG } from '@/lib/config';
 import { 
   LucideCheck, 
   LucideX, 
@@ -33,10 +34,10 @@ const COMPETITORS: Record<string, CompetitorData> = {
   teal: {
     name: "Teal",
     slug: "teal",
-    description: "The lightweight, AI-native alternative to Teal. Engineered for software engineers who need speed and precision over project management bloat.",
+    description: `The lightweight, AI-native alternative to Teal. Engineered for software engineers who need speed and precision over project management bloat.`,
     keywords: ["Teal alternative for engineers", "AI resume builder vs Teal", "developer resume builder"],
     heroTitle: "Faster. Lighter. Tech-First.",
-    heroSub: "Teal is a great CRM for jobs. ResumeMaxxing is a high-performance architect for resumes. Switch to the tool engineered strictly for the hunt.",
+    heroSub: `Teal is a great CRM for jobs. ${SITE_CONFIG.name} is a high-performance architect for resumes. Switch to the tool engineered strictly for the hunt.`,
     comparisonPoints: [
       { feature: "AI Accuracy for Tech Roles", competitor: "Generalist", us: "Tech-Optimized", highlight: true },
       { feature: "Speed to Export", competitor: "Medium", us: "Instant", highlight: true },
@@ -48,10 +49,10 @@ const COMPETITORS: Record<string, CompetitorData> = {
   novoresume: {
     name: "Novoresume",
     slug: "novoresume",
-    description: "The ATS-first alternative to Novoresume. Our single-column, mathematically engineered templates pass the parsers that Novoresume's multi-column designs break.",
+    description: `The ATS-first alternative to Novoresume. Our single-column, mathematically engineered templates pass the parsers that Novoresume's multi-column designs break.`,
     keywords: ["Novoresume alternative", "ATS friendly resume vs Novoresume", "single column resume builder"],
     heroTitle: "ATS Precision vs. Visual Bloat.",
-    heroSub: "Multi-column templates look great to humans but break most parsers. We engineered ResumeMaxxing to pass systems 100% of the time. Zero compromise.",
+    heroSub: `Multi-column templates look great to humans but break most parsers. We engineered ${SITE_CONFIG.name} to pass systems 100% of the time. Zero compromise.`,
     comparisonPoints: [
       { feature: "ATS Parsing Accuracy", competitor: "Variable (Columns)", us: "100% Precision", highlight: true },
       { feature: "Software Engineer Focus", competitor: "General", us: "Hyper-Niche", highlight: true },
@@ -63,10 +64,10 @@ const COMPETITORS: Record<string, CompetitorData> = {
   zety: {
     name: "Zety",
     slug: "zety",
-    description: "The niche tech alternative to Zety. Zety is for everyone; ResumeMaxxing is engineered strictly for software engineers and IT professionals.",
+    description: `The niche tech alternative to Zety. Zety is for everyone; ${SITE_CONFIG.name} is engineered strictly for software engineers and IT professionals.`,
     keywords: ["Zety alternative for software engineers", "tech resume maker vs zety", "best developer resume builder"],
     heroTitle: "Engineered for Tech. Not Everyone.",
-    heroSub: "Zety builds resumes for 1,000 industries. We build for one: The Tech Industry. Better keywords, better parsers, better results for developers.",
+    heroSub: `Zety builds resumes for 1,000 industries. We build for one: The Tech Industry. Better keywords, better parsers, better results for developers.`,
     comparisonPoints: [
       { feature: "Industry Focus", competitor: "Everyone", us: "Tech Professionals Only", highlight: true },
       { feature: "Technical Keyword Logic", competitor: "Standard", us: "AI Powered Deep-Link", highlight: true },
@@ -82,7 +83,7 @@ export async function generateMetadata({ params }: { params: { competitor: strin
   if (!competitor) return { title: "Alternative Not Found" };
 
   return {
-    title: `Best ${competitor.name} Alternative for Software Engineers | ResumeMaxxing`,
+    title: `Best ${competitor.name} Alternative for Software Engineers | ${SITE_CONFIG.name}`,
     description: competitor.description,
     keywords: competitor.keywords,
   };
@@ -115,7 +116,7 @@ export default function AlternativePage({ params }: { params: { competitor: stri
           <div className="flex justify-center gap-6">
             <Link href="/">
               <Button className="h-14 px-10 bg-cyan-accent text-black hover:bg-white uppercase font-heading font-bold tracking-widest text-xs transition-all shadow-[0_0_20px_rgba(0,240,255,0.1)]">
-                Try ResumeMaxxing Free
+                Try {SITE_CONFIG.name} Free
               </Button>
             </Link>
           </div>
@@ -131,7 +132,7 @@ export default function AlternativePage({ params }: { params: { competitor: stri
                 <tr className="border-b border-white/5 bg-white/5">
                   <th className="p-6 text-[10px] uppercase tracking-widest text-white/40 font-bold">Feature</th>
                   <th className="p-6 text-[10px] uppercase tracking-widest text-white/40 font-bold">{data.name}</th>
-                  <th className="p-6 text-[10px] uppercase tracking-widest text-cyan-accent font-black italic">ResumeMaxxing</th>
+                  <th className="p-6 text-[10px] uppercase tracking-widest text-cyan-accent font-black italic">{SITE_CONFIG.name}</th>
                 </tr>
               </thead>
               <tbody>
@@ -163,7 +164,7 @@ export default function AlternativePage({ params }: { params: { competitor: stri
           <div className="mt-8 flex items-start gap-3 p-4 bg-white/5 border border-white/10 rounded-sm">
              <LucideInfo className="w-4 h-4 text-white/20 shrink-0 mt-0.5" />
              <p className="text-[9px] font-mono text-white/30 uppercase leading-relaxed uppercase tracking-tighter">
-               Legal Disclaimer: {data.name} is a registered trademark of its respective holders. Use of the name is for nominative comparison purposes only and does not imply affiliation or endorsement. Data is based on public feature availability and ResumeMaxxing internal testing as of April 2026.
+               Legal Disclaimer: {data.name} is a registered trademark of its respective holders. Use of the name is for nominative comparison purposes only and does not imply affiliation or endorsement. Data is based on public feature availability and {SITE_CONFIG.name} internal testing as of {new Date().toLocaleString('en-us', { month: 'long', year: 'numeric' })}.
              </p>
           </div>
         </div>
@@ -176,7 +177,7 @@ export default function AlternativePage({ params }: { params: { competitor: stri
             Stop Browsing. <span className="text-cyan-accent">Start Architecting.</span>
           </h2>
           <p className="text-xs font-mono text-white/40 uppercase tracking-widest leading-relaxed">
-            Don't let a generic builder sink your application. Join thousands of Software Engineers who use ResumeMaxxing to bypass the noise.
+            Don't let a generic builder sink your application. Join thousands of Software Engineers who use {SITE_CONFIG.name} to bypass the noise.
           </p>
           <Link href="/">
             <Button variant="outline" className="h-16 px-16 border-cyan-accent text-cyan-accent hover:bg-cyan-accent hover:text-black uppercase font-heading font-bold tracking-widest text-sm transition-all">

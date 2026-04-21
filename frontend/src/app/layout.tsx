@@ -2,6 +2,7 @@ import { Metadata, Viewport } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import JsonLd, { getOrganizationSchema, getSoftwareAppSchema } from "@/components/JsonLd";
+import { SITE_CONFIG } from "@/lib/config";
 
 export const viewport: Viewport = {
   themeColor: "#000000",
@@ -11,41 +12,34 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "ResumeMaxxing | ATS-Friendly AI Resume Builder for Tech",
-    template: "%s | ResumeMaxxing",
+    default: SITE_CONFIG.seo.defaultTitle,
+    template: SITE_CONFIG.seo.titleTemplate,
   },
-  description: "The AI Resume Architect engineered for Software Engineers and IT Professionals. Generate ATS-optimized, single-column resumes that pass every parser.",
-  keywords: [
-    "ATS-friendly engineering resume builder",
-    "Tech resume AI",
-    "Developer resume maker",
-    "Software Engineer Resume",
-    "Tailored Tech Resume",
-    "ATS Verified Resume"
-  ],
-  authors: [{ name: "ResumeMaxxing Team" }],
+  description: SITE_CONFIG.seo.description,
+  keywords: SITE_CONFIG.seo.keywords,
+  authors: [{ name: `${SITE_CONFIG.name} Team` }],
   openGraph: {
-// ... existing og config ...
     type: "website",
     locale: "en_US",
-    url: "https://resumemaxxing.com",
-    siteName: "ResumeMaxxing",
-    title: "ResumeMaxxing | AI Resume Architect for Tech",
-    description: "Engineered for engineers. Stop guessing, start winning interviews at top tech firms.",
+    url: SITE_CONFIG.baseUrl,
+    siteName: SITE_CONFIG.name,
+    title: SITE_CONFIG.seo.defaultTitle,
+    description: SITE_CONFIG.seo.description,
     images: [
       {
-        url: "/og-image.png",
+        url: SITE_CONFIG.seo.ogImage,
         width: 1200,
         height: 630,
-        alt: "ResumeMaxxing Social Preview",
+        alt: `${SITE_CONFIG.name} Social Preview`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ResumeMaxxing | AI Resume Architect for Tech",
-    description: "The definitive AI resume builder for the tech industry.",
-    images: ["/og-image.png"],
+    title: SITE_CONFIG.seo.defaultTitle,
+    description: SITE_CONFIG.seo.description,
+    images: [SITE_CONFIG.seo.ogImage],
+    creator: SITE_CONFIG.seo.social.twitter,
   },
   robots: {
     index: true,

@@ -1,4 +1,5 @@
 import React from 'react';
+import { SITE_CONFIG } from '@/lib/config';
 
 interface JsonLdProps {
   data: any;
@@ -17,20 +18,20 @@ export default function JsonLd({ data }: JsonLdProps) {
 export const getOrganizationSchema = () => ({
   "@context": "https://schema.org",
   "@type": "Organization",
-  "name": "ResumeMaxxing",
-  "url": "https://resumemaxxing.com",
-  "logo": "https://resumemaxxing.com/logo.png",
+  "name": SITE_CONFIG.name,
+  "url": SITE_CONFIG.baseUrl,
+  "logo": `${SITE_CONFIG.baseUrl}/logo.png`,
   "sameAs": [
-    "https://twitter.com/resumemaxxing",
-    "https://github.com/resumemaxxing"
+    `https://twitter.com/${SITE_CONFIG.seo.social.twitter.replace('@', '')}`,
+    `https://github.com/${SITE_CONFIG.seo.social.github}`
   ],
-  "description": "The AI Resume Architect for Software Engineers and Tech Professionals."
+  "description": SITE_CONFIG.seo.description
 });
 
 export const getSoftwareAppSchema = () => ({
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "ResumeMaxxing",
+  "name": SITE_CONFIG.name,
   "operatingSystem": "Web",
   "applicationCategory": "BusinessApplication",
   "offers": {

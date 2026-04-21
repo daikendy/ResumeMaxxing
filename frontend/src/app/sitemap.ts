@@ -1,7 +1,8 @@
 import { MetadataRoute } from 'next';
+import { SITE_CONFIG } from '@/lib/config';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://resumemaxxing.com';
+  const baseUrl = SITE_CONFIG.baseUrl;
 
   return [
     {
