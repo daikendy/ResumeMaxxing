@@ -1,25 +1,42 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, desc, func
+from sqlalchemy.orm import selectinload
 from typing import List
 from database import get_db
 from models.job_model import TrackedJob
 from schemas.job_schema import JobCreate, JobResponse
+from models.user_model import User # Needed for quota check
 
 from auth_utils import get_current_user, sync_user_to_db
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
 @router.get("/", response_model=List[JobResponse])
-def get_user_jobs(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Fetch all tracked jobs for the authenticated user, automatically syncing the user record first."""
-    sync_user_to_db(current_user, db)
-    return db.query(TrackedJob).filter(TrackedJob.user_id == current_user["id"]).order_by(TrackedJob.created_at.desc()).all()
+async def get_user_jobs(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Fetch all tracked jobs for the authenticated user."""
+    await sync_user_to_db(current_user, db)
+    
+    result = await db.execute(
+        select(TrackedJob)
+        .options(selectinload(TrackedJob.resume_versions)) # ⚡ EAGER LOAD
+        .filter(TrackedJob.user_id == current_user["id"])
+        .order_by(desc(TrackedJob.created_at))
+    )
+    return result.scalars().all()
 
 @router.get("/track/{job_id}", response_model=JobResponse)
-def get_job_by_id(job_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Fetch a single tracked job, ensuring the user record is synced."""
-    sync_user_to_db(current_user, db)
-    job = db.query(TrackedJob).filter(TrackedJob.id == job_id, TrackedJob.user_id == current_user["id"]).first()
+async def get_job_by_id(job_id: int, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Fetch a single tracked job."""
+    await sync_user_to_db(current_user, db)
+    
+    result = await db.execute(
+        select(TrackedJob)
+        .options(selectinload(TrackedJob.resume_versions)) # ⚡ EAGER LOAD
+        .filter(TrackedJob.id == job_id, TrackedJob.user_id == current_user["id"])
+    )
+    job = result.scalars().first()
+    
     if not job:
         raise HTTPException(status_code=404, detail="Job track not found or unauthorized access")
     return job
@@ -27,17 +44,21 @@ def get_job_by_id(job_id: int, current_user: dict = Depends(get_current_user), d
 from utils.exceptions import LimitReachedException
 
 @router.post("/", response_model=JobResponse)
-def create_job(payload: JobCreate, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Create a new job for the user, syncing their record and enforcing limits."""
-    sync_user_to_db(current_user, db)
+async def create_job(payload: JobCreate, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Create a new job for the user."""
+    await sync_user_to_db(current_user, db)
     user_id = current_user["id"]
     
     # 1. Enforce the V1 Limit
-    from models.user_model import User
-    db_user = db.query(User).filter(User.id == user_id).first()
+    result = await db.execute(select(User).filter(User.id == user_id))
+    db_user = result.scalars().first()
     total_quota = (db_user.generations_limit + db_user.bonus_quota) if db_user else 5
     
-    job_count = db.query(TrackedJob).filter(TrackedJob.user_id == user_id).count()
+    count_result = await db.execute(
+        select(func.count(TrackedJob.id)).filter(TrackedJob.user_id == user_id)
+    )
+    job_count = count_result.scalar() or 0
+    
     if job_count >= total_quota:
         raise LimitReachedException(f"TIER LIMIT: You have reached your limit of {total_quota} tracked jobs. Invite friends or upgrade to Pro for more.")
     
@@ -51,19 +72,23 @@ def create_job(payload: JobCreate, current_user: dict = Depends(get_current_user
     )
     
     db.add(db_job)
-    db.commit()
-    db.refresh(db_job)
+    await db.commit()
+    await db.refresh(db_job)
     return db_job
 
 @router.delete("/{job_id}")
-def delete_tracked_job(job_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Delete a tracked job and all its associated resume versions. Restricted to the job owner."""
-    sync_user_to_db(current_user, db)
-    job = db.query(TrackedJob).filter(TrackedJob.id == job_id, TrackedJob.user_id == current_user["id"]).first()
+async def delete_tracked_job(job_id: int, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Delete a tracked job and its versions."""
+    await sync_user_to_db(current_user, db)
+    
+    result = await db.execute(
+        select(TrackedJob).filter(TrackedJob.id == job_id, TrackedJob.user_id == current_user["id"])
+    )
+    job = result.scalars().first()
     
     if not job:
         raise HTTPException(status_code=404, detail="Job not found or access denied")
         
-    db.delete(job)
-    db.commit()
+    await db.delete(job)
+    await db.commit()
     return {"status": "success", "message": f"Job {job_id} and associated resumes deleted"}

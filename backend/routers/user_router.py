@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 import io
 import PyPDF2
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from database import get_db
 from models.master_resume_model import MasterResume
 from models.user_model import User
@@ -15,20 +16,21 @@ from auth_utils import get_current_user, sync_user_to_db
 router = APIRouter(prefix="/users", tags=["Users"])
 
 @router.get("/master-resume", response_model=MasterResumeResponse | None)
-def get_master_resume(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Fetch the master resume for the authenticated user, syncing the user record first."""
-    sync_user_to_db(current_user, db)
-    db_resume = db.query(MasterResume).filter(MasterResume.user_id == current_user["id"]).first()
-    return db_resume
+async def get_master_resume(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Fetch the master resume for the authenticated user."""
+    await sync_user_to_db(current_user, db)
+    result = await db.execute(select(MasterResume).filter(MasterResume.user_id == current_user["id"]))
+    return result.scalars().first()
 
 @router.post("/master-resume", response_model=MasterResumeResponse)
-def save_master_resume(payload: MasterResumeCreate, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Save or update the master resume, ensuring the user record is synced."""
-    sync_user_to_db(current_user, db)
+async def save_master_resume(payload: MasterResumeCreate, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Save or update the master resume."""
+    await sync_user_to_db(current_user, db)
     user_id = current_user["id"]
     
     # Check if exists
-    db_resume = db.query(MasterResume).filter(MasterResume.user_id == user_id).first()
+    result = await db.execute(select(MasterResume).filter(MasterResume.user_id == user_id))
+    db_resume = result.scalars().first()
 
     if db_resume:
         # Update existing
@@ -38,14 +40,14 @@ def save_master_resume(payload: MasterResumeCreate, current_user: dict = Depends
         db_resume = MasterResume(user_id=user_id, resume_data=payload.resume_data)
         db.add(db_resume)
 
-    db.commit()
-    db.refresh(db_resume)
+    await db.commit()
+    await db.refresh(db_resume)
     return db_resume
 
 @router.post("/upload-resume")
-async def upload_resume(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db), file: UploadFile = File(...)):
-    """Extract data from a PDF, ensuring the user record is synced."""
-    sync_user_to_db(current_user, db)
+async def upload_resume(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db), file: UploadFile = File(...)):
+    """Extract data from a PDF."""
+    await sync_user_to_db(current_user, db)
     if not file.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
         
@@ -59,7 +61,7 @@ async def upload_resume(current_user: dict = Depends(get_current_user), db: Sess
         for page in pdf_reader.pages:
             text += page.extract_text() + "\n"
         
-        # Extract hyperlink annotations (GitHub/LinkedIn URLs hidden behind link text)
+        # Extract hyperlink annotations
         hyperlinks = []
         for page in pdf_reader.pages:
             if "/Annots" in page:
@@ -73,7 +75,6 @@ async def upload_resume(current_user: dict = Depends(get_current_user), db: Sess
                             if uri not in hyperlinks:
                                 hyperlinks.append(uri)
         
-        # Append hyperlinks to the text so the AI can identify GitHub/LinkedIn URLs
         if hyperlinks:
             text += "\n\n[HYPERLINKS]\n"
             for link in hyperlinks:
@@ -90,19 +91,19 @@ async def upload_resume(current_user: dict = Depends(get_current_user), db: Sess
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/me", response_model=UserResponse)
-def get_user_me(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Fetch current user details including quota and referral code."""
-    sync_user_to_db(current_user, db)
-    user = user_crud.get_user(db, current_user["id"])
+async def get_user_me(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Fetch current user details."""
+    await sync_user_to_db(current_user, db)
+    user = await user_crud.get_user(db, current_user["id"])
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
 @router.post("/redeem-code")
-def redeem_code(payload: RedeemCodeRequest, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+async def redeem_code(payload: RedeemCodeRequest, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """Redeem a referral code for bonus quota."""
-    sync_user_to_db(current_user, db)
-    result = user_crud.redeem_referral_code(db, current_user["id"], payload.code)
+    await sync_user_to_db(current_user, db)
+    result = await user_crud.redeem_referral_code(db, current_user["id"], payload.code)
     
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["message"])

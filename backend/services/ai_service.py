@@ -3,6 +3,7 @@ import asyncio
 from openai import AsyncOpenAI
 import os
 from dotenv import load_dotenv
+from utils.logging_config import logger
 
 load_dotenv()
 client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -16,10 +17,9 @@ async def tailor_resume(raw_resume: dict, job_description: str, job_title: str) 
     """
 
     if MOCK_MODE:
-        print("⚡ MOCK MODE ACTIVE: Bypassing OpenAI API...")
-        await asyncio.sleep(2) # Simulate the network delay so frontend loading states work
+        logger.info("AI_MOCK_MODE_ACTIVE", service="tailor_resume")
+        await asyncio.sleep(2) # Simulate delay
         
-        # Return fake but perfectly formatted JSON
         return {
             "contact": raw_resume.get("contact", {}),
             "experience": [
@@ -79,29 +79,32 @@ async def tailor_resume(raw_resume: dict, job_description: str, job_title: str) 
     """
 
     try:
-        print("⚡ Sending request to OpenAI for tailoring...")
+        start_time = asyncio.get_event_loop().time()
         response = await client.chat.completions.create(
-            model="gpt-4o-mini", # Super fast, cheap, perfect for MVP
-            response_format={ "type": "json_object" }, # Forces strict JSON output
+            model="gpt-4o-mini",
+            response_format={ "type": "json_object" },
             temperature=0.2,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            timeout=60.0  # Increased timeout for complex tailoring
+            timeout=60.0
         )
-        # Log the raw response for debugging
-        raw_content = response.choices[0].message.content
-        print(f"🤖 AI RAW CONTENT: {raw_content[:500]}...")
+        latency = (asyncio.get_event_loop().time() - start_time) * 1000
         
+        tokens = response.usage.total_tokens
+        logger.info("AI_GENERATION_SUCCESS", 
+                    service="tailor_resume", 
+                    latency_ms=f"{latency:.2f}ms", 
+                    tokens=tokens)
+
         # Parse the AI's string response back into a Python dictionary
-        tailored_json = json.loads(raw_content)
+        tailored_json = json.loads(response.choices[0].message.content)
         return tailored_json
         
     except Exception as e:
-        print(f"❌ OPENAI ERROR: {type(e).__name__} - {str(e)}")
-        # Raise it so the router can intercept it or fail cleanly
-        raise Exception(f"OpenAI Failed: {str(e)}")
+        logger.error("AI_GENERATION_FAILED", service="tailor_resume", error=str(e))
+        raise Exception(f"AI Tailoring Failed: {str(e)}")
 
 
 async def extract_resume_data(pdf_text: str) -> dict:

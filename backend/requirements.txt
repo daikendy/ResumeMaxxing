@@ -1,9 +1,11 @@
 fastapi
 uvicorn[standard]
-sqlalchemy
-pymysql[rsa]
+sqlalchemy>=2.0.0
+aiomysql
+alembic
 pydantic-settings
 python-dotenv
 openai
 python-multipart
 PyPDF2
+structlog

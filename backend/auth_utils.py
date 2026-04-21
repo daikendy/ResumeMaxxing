@@ -29,36 +29,42 @@ def get_jwks():
 
 import string
 import random
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from models.user_model import User
 
-def generate_referral_code(db: Session):
+async def generate_referral_code(db: AsyncSession):
     chars = string.ascii_uppercase + string.digits
     while True:
         code = ''.join(random.choices(chars, k=6))
-        # Collision check
-        if not db.query(User).filter(User.referral_code == code).first():
+        # ⚡ ASYNC COLLISION CHECK (SQLAlchemy 2.0)
+        result = await db.execute(select(User).filter(User.referral_code == code))
+        if not result.scalars().first():
             return code
 
-def sync_user_to_db(user_data: dict, db: Session):
+async def sync_user_to_db(user_data: dict, db: AsyncSession):
     """
     Ensures a user exists in the local database (Lazy Sync).
     """
     user_id = user_data["id"]
     email = user_data.get("email") or f"{user_id}@clerk.user"
     
-    db_user = db.query(User).filter(User.id == user_id).first()
+    # ⚡ ASYNC USER LOOKUP
+    result = await db.execute(select(User).filter(User.id == user_id))
+    db_user = result.scalars().first()
+
     if not db_user:
         print(f"Syncing new user to DB: {user_id}")
+        referral_code = await generate_referral_code(db)
         db_user = User(
             id=user_id,
             email=email,
             subscription_tier='free',
-            referral_code=generate_referral_code(db)
+            referral_code=referral_code
         )
         db.add(db_user)
-        db.commit()
-        db.refresh(db_user)
+        await db.commit()
+        await db.refresh(db_user)
     return db_user
 
 async def get_current_user(token: HTTPAuthorizationCredentials = Depends(security)) -> dict:

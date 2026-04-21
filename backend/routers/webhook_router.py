@@ -1,7 +1,7 @@
 import os
 import json
 from fastapi import APIRouter, Request, HTTPException, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from svix.webhooks import Webhook, WebhookVerificationError
 from database import get_db
 from crud import user_crud
@@ -15,7 +15,7 @@ router = APIRouter(
 CLERK_WEBHOOK_SECRET = os.getenv("CLERK_WEBHOOK_SECRET", "whsec_test_secret_for_dev")
 
 @router.post("/clerk")
-async def clerk_webhook(request: Request, db: Session = Depends(get_db)):
+async def clerk_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     """
     RECEIVE CLERK WEBHOOKS
     This listens for events from Clerk (like user deletion) and syncs our database.
@@ -44,7 +44,7 @@ async def clerk_webhook(request: Request, db: Session = Depends(get_db)):
     if event_type == "user.deleted":
         user_id = data.get("id")
         if user_id:
-            success = user_crud.delete_user(db, user_id)
+            success = await user_crud.delete_user(db, user_id)
             if success:
                 print(f"💀 USER SCRUBBED: Deleted all data for Clerk ID {user_id}")
             else:
