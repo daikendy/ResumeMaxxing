@@ -21,6 +21,10 @@ from auth_utils import get_jwks
 
 load_dotenv()
 
+host = os.getenv("HOST", "0.0.0.0")
+port = int(os.getenv("PORT", 8000))
+is_dev = os.getenv("ENVIRONMENT", "development") == "development"
+
 # 🛡️ ALLOWED ORIGINS: Explicit list (CORS spec requires this with credentials)
 # Capacitor uses capacitor://localhost (iOS) and http://localhost (Android)
 ALLOWED_ORIGINS = os.getenv(
@@ -121,7 +125,7 @@ async def add_security_headers(request: Request, call_next):
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' blob: data: https:; "
-        "connect-src 'self' capacitor://localhost http://localhost http://localhost:8000 https://api.clerk.com https://*.clerk.accounts.dev https://api.openai.com; "
+        f"connect-src 'self' capacitor://localhost http://localhost {host if host != '0.0.0.0' else ''} https://api.clerk.com https://*.clerk.accounts.dev https://api.openai.com; "
         "frame-ancestors 'none'"
     )
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -188,4 +192,6 @@ async def health_check(db: AsyncSession = Depends(get_db)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    # uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    # uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host=host, port=port, reload=is_dev)
