@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 # Local Imports
 from auth_utils import get_current_user, sync_user_to_db
-from crud import user_crud
+from crud import user_crud, resume_crud
 from database import get_db
 from models.master_resume_model import MasterResume
 from models.user_model import User
@@ -36,22 +36,7 @@ async def get_master_resume(current_user: dict = Depends(get_current_user), db: 
 async def save_master_resume(payload: MasterResumeCreate, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """Save or update the master resume."""
     await sync_user_to_db(current_user, db)
-    user_id = current_user["id"]
-    
-    result = await db.execute(select(MasterResume).filter(MasterResume.user_id == user_id))
-    db_resume = result.scalars().first()
-
-    if db_resume:
-        # Update existing (Sanitized)
-        db_resume.resume_data = sanitize_data(payload.resume_data)
-    else:
-        # Create new (Sanitized)
-        db_resume = MasterResume(user_id=user_id, resume_data=sanitize_data(payload.resume_data))
-        db.add(db_resume)
-
-    await db.commit()
-    await db.refresh(db_resume)
-    return db_resume
+    return await resume_crud.upsert_master_resume(db, current_user["id"], payload.resume_data)
 
 @router.post("/upload-resume")
 @limiter.limit("5/minute") # 🛡️ Strict AI Shield
@@ -155,8 +140,12 @@ async def create_vault_snapshot(request: Request, current_user: dict = Depends(g
     # 3. Save snapshot
     snapshot = await vault_crud.create_snapshot(db, user.id, summary, master.resume_data)
     
-    # 4. Log Activity
-    await vault_crud.log_activity(db, user.id, "VAULT_SAVE", f"Snapshot Created: {summary}")
+    # 4. Log Activity (Non-Blocking)
+    try:
+        await vault_crud.log_activity(db, user.id, "VAULT_SAVE", f"Snapshot Created: {summary}")
+    except Exception as e:
+        from utils.logging_config import logger
+        logger.error("TELEMETRY_FAILED", error=str(e))
     
     return snapshot
 
@@ -170,9 +159,13 @@ async def restore_vault_snapshot(request: Request, payload: VaultRestoreRequest,
     if not snapshot:
         raise HTTPException(status_code=404, detail="SNAPSHOT_NOT_FOUND")
     
-    from crud import resume_crud
     await resume_crud.upsert_master_resume(db, user.id, snapshot.resume_data)
-    await vault_crud.log_activity(db, user.id, "VAULT_RESTORE", f"Profile restored: {snapshot.name}")
+    
+    try:
+        await vault_crud.log_activity(db, user.id, "VAULT_RESTORE", f"Profile restored: {snapshot.name}")
+    except Exception as e:
+        from utils.logging_config import logger
+        logger.error("TELEMETRY_FAILED", error=str(e))
     
     return {"status": "SUCCESS", "name": snapshot.name}
 

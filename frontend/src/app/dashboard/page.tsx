@@ -129,7 +129,7 @@ export default function DashboardPage() {
       setJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: newStatus } : j));
       toast.success("STATUS_SYNCED");
     } catch (e) {
-      toast.error("SYNC_ERROR");
+      // Handled by global API interceptor
     }
   }, [getToken]);
 
@@ -141,7 +141,7 @@ export default function DashboardPage() {
       setJobs(prev => prev.filter(j => j.id !== id));
       toast.success("TARGET_PURGED");
     } catch (e) {
-      toast.error("DELETE_FAILED");
+      // Handled by global API interceptor
     } finally { setConfirmDeleteId(null); }
   }, [getToken]);
 
@@ -168,7 +168,7 @@ export default function DashboardPage() {
       setIsModalOpen(false);
       setJobFormData({ id: null, job_title: '', company_name: '', job_description: '', job_url: '' });
     } catch (e) {
-      toast.error("SYNC_ERROR");
+      // Handled by global API interceptor
     } finally { setIsSubmitting(false); }
   };
 

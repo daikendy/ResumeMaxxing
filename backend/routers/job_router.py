@@ -78,14 +78,25 @@ async def create_job(request: Request, payload: JobCreate, current_user: dict = 
     )
     
     db.add(db_job)
-    
-    await vault_crud.log_activity(
-        db, user_id, "TARGET_ACQUIRED", 
-        f"New Target: {db_job.job_title} @ {db_job.company_name}"
-    )
-    
     await db.commit()
-    await db.refresh(db_job)
+    
+    # 3. Log Activity (Non-Blocking)
+    try:
+        await vault_crud.log_activity(
+            db, user_id, "TARGET_ACQUIRED", 
+            f"New Target: {db_job.job_title} @ {db_job.company_name}"
+        )
+    except Exception as e:
+        from utils.logging_config import logger
+        logger.error("TELEMETRY_FAILED", error=str(e))
+    
+    # 4. Eager Load and Refresh for response
+    result = await db.execute(
+        select(TrackedJob)
+        .options(selectinload(TrackedJob.resume_versions))
+        .filter(TrackedJob.id == db_job.id)
+    )
+    db_job = result.scalars().first()
     return db_job
 
 @router.delete("/{job_id}")
@@ -130,12 +141,16 @@ async def update_tracked_job(job_id: int, payload: JobUpdate, current_user: dict
     if payload.company_name is not None:
         job.company_name = sanitize_text(payload.company_name)
     
-    # Log status update if changed
+    # Log status update if changed (Non-Blocking)
     if payload.status is not None:
-         await vault_crud.log_activity(
-            db, current_user["id"], "TARGET_STATUS_UPDATED", 
-            f"Target Status: {job.job_title} -> {payload.status.upper()}"
-        )
+        try:
+            await vault_crud.log_activity(
+                db, current_user["id"], "TARGET_STATUS_UPDATED", 
+                f"Target Status: {job.job_title} -> {payload.status.upper()}"
+            )
+        except Exception as e:
+            from utils.logging_config import logger
+            logger.error("TELEMETRY_FAILED", error=str(e))
     
     await db.commit()
     await db.refresh(job)

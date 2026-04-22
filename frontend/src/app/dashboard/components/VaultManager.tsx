@@ -40,6 +40,7 @@ export default function VaultManager() {
       const data = await resumeService.getVaultSnapshots(token);
       setSnapshots(data);
     } catch (e) {
+      // Quietly log index errors; global interceptor handles UI if critical
       console.error("VAULT_INDEX_ERROR", e);
     } finally {
       setLoading(false);
@@ -55,7 +56,7 @@ export default function VaultManager() {
       setSnapshots(prev => [newSnapshot, ...prev]);
       toast.success("SNAPSHOT_STORED", { description: newSnapshot.name });
     } catch (e) {
-      toast.error("VAULT_SYNC_FAILED");
+      // Handled by global API interceptor
     } finally {
       setIsCapturing(false);
     }
@@ -70,7 +71,7 @@ export default function VaultManager() {
       toast.success("PROFILE_RECONSTRUCTED", { description: `Active Master set to: ${name}` });
       // In a real app, we might want to refresh the Master Resume view here
     } catch (e) {
-      toast.error("RESTORE_FAILED");
+      // Handled by global API interceptor
     } finally {
       setRestoringId(null);
     }
@@ -86,7 +87,7 @@ export default function VaultManager() {
       toast.info("VERSION_DECOMMISSIONED");
       try { await Haptics.impact({ style: ImpactStyle.Medium }); } catch (e) {}
     } catch (e) {
-      toast.error("DECOMMISSION_FAILED");
+      // Handled by global API interceptor
     } finally {
       setDeletingId(null);
     }
@@ -105,7 +106,7 @@ export default function VaultManager() {
       toast.warning("SYSTEM_WIPE_COMPLETE", { description: "All vaulted records erased." });
       try { await Haptics.impact({ style: ImpactStyle.Heavy }); } catch (e) {}
     } catch (e) {
-      toast.error("PURGE_FAILED");
+      // Handled by global API interceptor
     } finally {
       setIsPurging(false);
     }
