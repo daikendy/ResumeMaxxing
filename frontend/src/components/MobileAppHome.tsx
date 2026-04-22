@@ -63,9 +63,13 @@ export default function MobileAppHome() {
           className="flex justify-center mb-4"
         >
           <div className="relative group">
-            <div className="absolute inset-0 bg-cyan-accent/20 blur-xl group-hover:bg-cyan-accent/40 transition-colors" />
-            <div className="relative w-20 h-20 bg-cyan-accent flex items-center justify-center shadow-[0_0_40px_rgba(0,240,255,0.3)]">
-              <LucideTerminal className="w-10 h-10 text-black" />
+            <div className="absolute inset-0 bg-cyan-accent/20 blur-2xl group-hover:bg-cyan-accent/40 transition-colors" />
+            <div className="relative w-24 h-24 flex items-center justify-center">
+              <img 
+                src="/logo_premium.png" 
+                alt="ResumeMaxxing Premium Logo" 
+                className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(0,240,255,0.5)]" 
+              />
             </div>
           </div>
         </motion.div>
