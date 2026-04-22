@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -61,7 +62,8 @@ async def generate_tailored_resume(request: Request, payload: ResumeCreate, curr
         user_id=user.id,
         resume_content=tailored_content,
         version_number=new_version_number,
-        is_active=True
+        is_active=True,
+        created_at=datetime.utcnow()
     )
     
     # 7. Update User stats, log activity and commit

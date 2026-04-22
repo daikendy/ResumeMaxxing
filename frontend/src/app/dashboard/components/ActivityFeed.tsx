@@ -5,6 +5,8 @@ import { useAuth } from '@clerk/clerk-react';
 import { resumeService } from '@/lib/api/services/resumeService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LucideTerminal, LucideActivity } from 'lucide-react';
+import { formatHudTime } from '@/lib/utils';
+import { HUD_EVENT_SYNC } from '@/lib/constants';
 
 interface Activity {
   id: number;
@@ -35,9 +37,23 @@ export default function ActivityFeed() {
     };
 
     fetchActivity();
+    
+    const handleSync = () => fetchActivity();
+    window.addEventListener(HUD_EVENT_SYNC, handleSync);
+    
     const interval = setInterval(fetchActivity, 15000); // 15s refresh for 'Live' feel
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener(HUD_EVENT_SYNC, handleSync);
+    };
   }, [getToken]);
+
+  // ✨ Auto-Scroll to top when new activities arrive
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [activities]);
 
   const displayedActivities = isExpanded ? activities : activities.slice(0, 5);
 
@@ -81,7 +97,7 @@ export default function ActivityFeed() {
                 className="flex gap-4 items-start py-2 border-b border-white/[0.02] last:border-0"
               >
                 <span className="text-[10px] font-mono text-cyan-accent/30 whitespace-nowrap pt-0.5">
-                  [{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}]
+                  [{formatHudTime(log.timestamp)}]
                 </span>
                 <div className="flex flex-col">
                   <span className="text-[9px] font-mono font-bold text-white/20 mb-0.5 uppercase tracking-tighter">

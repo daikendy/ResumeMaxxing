@@ -13,7 +13,7 @@ class TrackedJob(Base):
     job_description = Column(Text)
     job_url = Column(String(1000), nullable=True) # ⚡ New Field
     status = Column(Enum('bookmarked', 'applied', 'interviewing', 'rejected', 'hired', name="status_enum"), default='bookmarked')
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime, server_default=func.now())
 
     # Java @ManyToOne equivalent
     owner = relationship("User", back_populates="jobs")

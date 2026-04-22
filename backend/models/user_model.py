@@ -14,7 +14,7 @@ class User(Base):
     referral_code = Column(String(50), unique=True, index=True)
     referred_by = Column(String(255), nullable=True)
     bonus_quota = Column(Integer, default=0)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime, server_default=func.now())
 
     # Java @OneToMany equivalent: A user has many jobs and resumes
     jobs = relationship("TrackedJob", back_populates="owner", cascade="all, delete-orphan")

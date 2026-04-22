@@ -1,4 +1,5 @@
 from typing import List
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select, desc, func
@@ -74,7 +75,8 @@ async def create_job(request: Request, payload: JobCreate, current_user: dict = 
         job_title=sanitize_text(payload.job_title),
         job_description=sanitize_text(payload.job_description),
         job_url=payload.job_url,
-        status='bookmarked'
+        status='bookmarked',
+        created_at=datetime.utcnow()
     )
     
     db.add(db_job)

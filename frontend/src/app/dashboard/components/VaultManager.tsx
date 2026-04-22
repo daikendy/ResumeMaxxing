@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { resumeService } from '@/lib/api/services/resumeService';
+import { formatHudDate } from '@/lib/utils';
+import { HUD_EVENT_SYNC } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LucideShieldCheck, LucideDatabase, LucideRotateCcw, LucidePlus, LucideLoader2, LucideTrash2, LucideAlertTriangle, LucideX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -55,6 +57,7 @@ export default function VaultManager() {
       const newSnapshot = await resumeService.createVaultSnapshot(token);
       setSnapshots(prev => [newSnapshot, ...prev]);
       toast.success("SNAPSHOT_STORED", { description: newSnapshot.name });
+      window.dispatchEvent(new Event(HUD_EVENT_SYNC));
     } catch (e) {
       // Handled by global API interceptor
     } finally {
@@ -69,6 +72,7 @@ export default function VaultManager() {
       if (!token) return;
       await resumeService.restoreVaultSnapshot(id, token);
       toast.success("PROFILE_RECONSTRUCTED", { description: `Active Master set to: ${name}` });
+      window.dispatchEvent(new Event(HUD_EVENT_SYNC));
       // In a real app, we might want to refresh the Master Resume view here
     } catch (e) {
       // Handled by global API interceptor
@@ -85,6 +89,7 @@ export default function VaultManager() {
       await resumeService.deleteVaultSnapshot(id, token);
       setSnapshots(prev => prev.filter(s => s.id !== id));
       toast.info("VERSION_DECOMMISSIONED");
+      window.dispatchEvent(new Event(HUD_EVENT_SYNC));
       try { await Haptics.impact({ style: ImpactStyle.Medium }); } catch (e) {}
     } catch (e) {
       // Handled by global API interceptor
@@ -211,7 +216,7 @@ export default function VaultManager() {
                     {s.name}
                   </span>
                   <span className="text-[8px] font-mono text-white/30 uppercase">
-                    ID: {s.id} | CREATED: {new Date(s.created_at).toLocaleDateString()}
+                    ID: {s.id} | CREATED: {formatHudDate(s.created_at)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">

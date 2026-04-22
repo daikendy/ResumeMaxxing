@@ -1,4 +1,6 @@
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
+export { ImpactStyle };
+export const HUD_EVENT_SYNC = 'resume_maxxing_hud_sync';
 
 export const LIMITS = {
   NAME: 100,

@@ -76,12 +76,12 @@ export const resumeService = {
 
   // --- VAULT & TELEMETRY ---
   getActivityTelemetry: async (token: string): Promise<any[]> => {
-    const response = await api.get<any[]>('/users/activity', authHeaders(token));
+    const response = await api.get<any[]>(`/users/activity?_t=${Date.now()}`, authHeaders(token));
     return response.data;
   },
 
   getVaultSnapshots: async (token: string): Promise<any[]> => {
-    const response = await api.get<any[]>('/users/vault', authHeaders(token));
+    const response = await api.get<any[]>(`/users/vault?_t=${Date.now()}`, authHeaders(token));
     return response.data;
   },
 

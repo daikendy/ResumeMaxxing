@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import datetime
 import httpx
 from typing import Optional
 
@@ -105,7 +106,8 @@ async def sync_user_to_db(clerk_user: dict, db: AsyncSession) -> User:
             email=email,
             subscription_tier='free',
             generations_limit=5,
-            referral_code=unique_code
+            referral_code=unique_code,
+            created_at=datetime.utcnow()
         )
         db.add(user)
         await db.commit()

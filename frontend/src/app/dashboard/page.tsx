@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@clerk/clerk-react';
 import { resumeService } from '@/lib/api/services/resumeService';
+import { HUD_EVENT_SYNC } from '@/lib/constants';
 import { AuthGuard } from '@/components/AuthGuard';
 import { PremiumModal } from '@/components/PremiumModal';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { TrackedJob } from '@/types/resume';
-import { playHaptic, LIMITS } from '@/lib/constants';
+import { playHaptic, LIMITS, ImpactStyle } from '@/lib/constants';
 
 // Page Components
 import StatsBanner from './components/StatsBanner';
@@ -108,14 +109,15 @@ export default function DashboardPage() {
   const handleRedeemCode = useCallback(async () => {
     if (!referralInput || referralInput.length !== 6) return;
     setIsRedeeming(true);
-    playHaptic();
     try {
       const token = await getToken();
       if (!token) throw new Error("No session");
       await resumeService.redeemReferralCode(referralInput, token);
       setReferralInput('');
       fetchUserData();
-      toast.success("BONUS ACTIVATED!", { description: "+5 Generations added." });
+      toast.success("CODE_REDEEMED", { description: "Protocol bonus applied to your quota." });
+      window.dispatchEvent(new Event(HUD_EVENT_SYNC));
+      playHaptic(ImpactStyle.Heavy);
     } catch (err: any) {
       toast.error("REFERRAL FAILED", { description: err.response?.data?.detail || "Invalid code." });
     } finally { setIsRedeeming(false); }
@@ -139,7 +141,9 @@ export default function DashboardPage() {
       if (!token) return;
       await resumeService.deleteTrackedJob(id, token);
       setJobs(prev => prev.filter(j => j.id !== id));
-      toast.success("TARGET_PURGED");
+      toast.info("TARGET_DECOMMISSIONED");
+      window.dispatchEvent(new Event(HUD_EVENT_SYNC));
+      playHaptic(ImpactStyle.Medium);
     } catch (e) {
       // Handled by global API interceptor
     } finally { setConfirmDeleteId(null); }
@@ -163,9 +167,11 @@ export default function DashboardPage() {
       } else {
         const newJob = await resumeService.createTrackedJob(jobFormData, token);
         setJobs(prev => [newJob, ...prev]);
-        toast.success("TARGET_ACQUIRED");
+        toast.success("TARGET_ACQUIRED", { description: `${jobFormData.job_title} at ${jobFormData.company_name}` });
       }
       setIsModalOpen(false);
+      window.dispatchEvent(new Event(HUD_EVENT_SYNC));
+      playHaptic(ImpactStyle.Heavy);
       setJobFormData({ id: null, job_title: '', company_name: '', job_description: '', job_url: '' });
     } catch (e) {
       // Handled by global API interceptor

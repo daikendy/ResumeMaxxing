@@ -12,7 +12,7 @@ class ResumeVersion(Base):
     resume_content = Column(JSON, nullable=False) # Stores the AI JSON payload
     version_number = Column(Integer, nullable=False) # 1, 2, 3...
     is_active = Column(Boolean, default=True) # The "Undo" flag
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime, server_default=func.now())
 
     # Relationships
     owner = relationship("User", back_populates="resumes")

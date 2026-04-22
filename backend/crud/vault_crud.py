@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from models.vault_model import VaultSnapshot, ActivityLog
+from datetime import datetime
 from typing import List
 
 async def log_activity(db: AsyncSession, user_id: str, action_code: str, description: str):
@@ -8,10 +9,12 @@ async def log_activity(db: AsyncSession, user_id: str, action_code: str, descrip
     new_log = ActivityLog(
         user_id=user_id,
         action_code=action_code,
-        description=description
+        description=description,
+        timestamp=datetime.utcnow()
     )
     db.add(new_log)
     await db.commit()
+    await db.refresh(new_log)
     return new_log
 
 async def get_recent_activity(db: AsyncSession, user_id: str, limit: int = 10) -> List[ActivityLog]:
@@ -19,7 +22,7 @@ async def get_recent_activity(db: AsyncSession, user_id: str, limit: int = 10) -
     result = await db.execute(
         select(ActivityLog)
         .filter(ActivityLog.user_id == user_id)
-        .order_by(desc(ActivityLog.timestamp))
+        .order_by(desc(ActivityLog.timestamp), desc(ActivityLog.id))
         .limit(limit)
     )
     return result.scalars().all()
@@ -29,7 +32,8 @@ async def create_snapshot(db: AsyncSession, user_id: str, name: str, data: dict)
     snapshot = VaultSnapshot(
         user_id=user_id,
         name=name,
-        resume_data=data
+        resume_data=data,
+        created_at=datetime.utcnow()
     )
     db.add(snapshot)
     await db.commit()

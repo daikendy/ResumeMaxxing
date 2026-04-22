@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 class VaultSnapshotBase(BaseModel):
     name: str
@@ -12,7 +12,7 @@ class VaultSnapshotCreate(VaultSnapshotBase):
 class VaultSnapshotResponse(VaultSnapshotBase):
     id: int
     user_id: str
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -22,7 +22,7 @@ class ActivityLogResponse(BaseModel):
     user_id: str
     action_code: str
     description: str
-    timestamp: datetime
+    timestamp: Optional[datetime] = None
 
     class Config:
         from_attributes = True
