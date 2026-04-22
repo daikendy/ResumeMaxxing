@@ -48,9 +48,9 @@ export default function Navbar() {
             <motion.div 
               whileHover={{ scale: 1.1, rotate: 5 }}
               whileTap={{ scale: 0.9 }}
-              className="w-10 h-10 bg-black flex items-center justify-center border border-cyan-accent/20 overflow-hidden"
+              className="w-10 h-10 flex items-center justify-center overflow-hidden"
             >
-              <img src="/logo.png" alt="ResumeMaxxing Logo" className="w-full h-full object-cover" />
+              <img src="/logo_premium.png" alt="ResumeMaxxing Logo" className="w-full h-full object-cover" />
             </motion.div>
             <div className="flex flex-col">
               <h1 className="text-base sm:text-lg font-heading text-white tracking-[0.2em] uppercase leading-none">

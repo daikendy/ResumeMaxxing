@@ -1,0 +1,27 @@
+# Virtual environments
+venv/
+env/
+
+# Environment & Secrets (SECURITY: never commit credentials)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDEs
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+frontend/out/
+frontend/.next/

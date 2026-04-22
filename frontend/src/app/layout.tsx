@@ -25,8 +25,8 @@ export const metadata: Metadata = {
     title: SITE_CONFIG.name,
   },
   icons: {
-    icon: "/icon-192.png",
-    apple: "/apple-touch-icon.png",
+    icon: "/logo_premium.png",
+    apple: "/logo_premium.png",
   },
   openGraph: {
     type: "website",
