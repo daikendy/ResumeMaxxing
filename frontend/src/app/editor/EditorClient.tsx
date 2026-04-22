@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { useResumeStore } from '@/store/useResumeStore';
 import { ImpactStyle, Haptics } from '@capacitor/haptics';
 import { SITE_CONFIG } from '@/lib/config';
-import { ResumeVersion } from '@/types/resume';
+import { ResumeContent, ResumeVersion } from '@/types/resume';
 
 // New Atomic Components (Centralized)
 import { EditorToolbar } from '@/components/editor/EditorToolbar';
@@ -20,7 +20,7 @@ import { EditorWorkspace } from '@/components/editor/EditorWorkspace';
 export default function EditorClient({ jobId }: { jobId: string }) {
   const { getToken, isLoaded } = useAuth();
   const store = useResumeStore();
-  
+
   // Local UI state (not in store)
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [errorDetails, setErrorDetails] = useState<{ title: string, message: string, code?: string } | null>(null);
@@ -45,13 +45,13 @@ export default function EditorClient({ jobId }: { jobId: string }) {
           const job = await resumeService.getTrackedJob(jobId, token);
           if (job) {
             store.setJobDetails(job.job_title, job.job_description || '');
-            
+
             if (job.resume_versions && job.resume_versions.length > 0) {
               store.initializeWithHistory(job.resume_versions);
-              
+
               // Set initial status to success if we have versions
               store.setStatus('success');
-              
+
               // Match the active version if possible
               const activeIndex = job.resume_versions.findIndex((v: ResumeVersion) => v.is_active);
               if (activeIndex !== -1) {
@@ -112,10 +112,18 @@ export default function EditorClient({ jobId }: { jobId: string }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // 5. Root Actions
+  // 5. Magic Scroll Lock: Prevents the whole page from scrolling on the Editor route
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  // 6. Root Actions
   const handlePrint = async () => {
     const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform();
-    
+
     if (isNative) {
       const element = document.getElementById('printable-resume-mount');
       if (!element) return;
@@ -129,13 +137,13 @@ export default function EditorClient({ jobId }: { jobId: string }) {
       };
 
       toast.loading("ARCHITECTING PDF...");
-      
+
       try {
         // @ts-ignore - html2pdf is traditionally imported this way
         const html2pdf = (await import('html2pdf.js')).default;
         // @ts-ignore - html2pdf options can be complex for untyped JS lib
         const pdfBlob = await html2pdf().from(element).set(opt).output('blob');
-        
+
         const { shareNativeFile } = await import('@/lib/utils/nativeShare');
         await shareNativeFile(pdfBlob, `${SITE_CONFIG.name}_Resume.pdf`);
         toast.dismiss();
@@ -156,23 +164,23 @@ export default function EditorClient({ jobId }: { jobId: string }) {
       toast.error("MISSING TARGET DATA");
       return;
     }
-    
+
     store.setStatus('loading');
     try {
       const token = await getToken();
       if (!token) throw new Error("No session found");
-      
+
       const response = await resumeService.generateTailoredResume({
         tracked_job_id: parseInt(jobId) || 1,
-        raw_resume_data: store.masterProfile || {}
+        raw_resume_data: store.masterProfile as ResumeContent
       }, token);
-      
+
       store.setResume(response);
       toast.success("OPTIMIZATION COMPLETE");
       store.setStatus('success');
       store.setSidebarHidden(true);
-      
-      try { await Haptics.impact({ style: ImpactStyle.Heavy }); } catch (e) {}
+
+      try { await Haptics.impact({ style: ImpactStyle.Heavy }); } catch (e) { }
     } catch (error: any) {
       const apiError = error.response?.data;
       if (apiError && (apiError.code === 'QUOTA_EXCEEDED' || apiError.code === 'LIMIT_REACHED')) {
@@ -187,24 +195,24 @@ export default function EditorClient({ jobId }: { jobId: string }) {
 
   return (
     <AuthGuard>
-      <div className="print-path flex flex-col md:flex-row h-[calc(100vh-64px)] w-full bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans relative overflow-x-hidden">
-        
+      <div className="print-path flex flex-col md:flex-row h-[calc(100dvh-70px)] sm:h-[calc(100dvh-85px)] mt-[70px] sm:mt-[85px] w-full bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans relative overflow-hidden">
+
         {/* Modular Components */}
         <EditorSidebar onGenerate={handleGenerate} />
 
         <main className={`print-path flex-grow h-full bg-[#111111] flex flex-col overflow-hidden relative transition-all duration-500`}>
           <EditorToolbar onPrint={handlePrint} />
           <EditorWorkspace />
-          
+
           {/* Generation Trigger (Keep in Sidebar for accessibility) */}
           {!store.isSidebarHidden && (
             <div className="md:hidden fixed bottom-6 right-6 z-50">
-              <button 
+              <button
                 onClick={handleGenerate}
                 disabled={store.status === 'loading'}
                 className="w-14 h-14 bg-cyan-accent text-black rounded-full shadow-2xl flex items-center justify-center premium-touch font-bold text-[10px] uppercase"
               >
-                  {store.status === 'loading' ? '...' : 'Execute'}
+                {store.status === 'loading' ? '...' : 'Execute'}
               </button>
             </div>
           )}
@@ -212,12 +220,12 @@ export default function EditorClient({ jobId }: { jobId: string }) {
       </div>
 
       {/* Global Modals */}
-      <PremiumModal 
-        isOpen={isPremiumModalOpen} 
-        onClose={() => setIsPremiumModalOpen(false)} 
-        title={errorDetails?.title} 
-        description={errorDetails?.message} 
-        errorCode={errorDetails?.code} 
+      <PremiumModal
+        isOpen={isPremiumModalOpen}
+        onClose={() => setIsPremiumModalOpen(false)}
+        title={errorDetails?.title}
+        description={errorDetails?.message}
+        errorCode={errorDetails?.code}
       />
     </AuthGuard>
   );

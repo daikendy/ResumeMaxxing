@@ -306,7 +306,7 @@ export default function MasterResumePage() {
             )}
         </AnimatePresence>
 
-        <main className="pt-8 px-4 md:px-8 max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 mt-16">
+        <main className="pt-8 px-4 md:px-8 max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 mt-[70px] sm:mt-[85px]">
             <aside className="lg:col-span-3 space-y-8">
                 <div className="lg:sticky lg:top-24 space-y-6">
                     <div className="hud-border p-6 relative overflow-hidden">

@@ -193,25 +193,7 @@ export default function DashboardPage() {
         {/* Global HUD Overlay */}
         <div className="hud-scanline no-print" />
 
-        <header className="fixed top-0 left-0 w-full z-50 border-b border-white/5 bg-black/80 backdrop-blur-md px-8 py-4 flex justify-between items-center no-print">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 group cursor-pointer" onClick={() => router.push('/')}>
-              <div className="w-8 h-8 bg-white text-black flex items-center justify-center font-heading font-black text-xl italic group-hover:bg-cyan-accent transition-colors">R</div>
-              <span className="font-heading font-bold text-sm tracking-tighter text-white">RESUMEMAXXING <span className="text-cyan-accent opacity-50 font-mono text-[10px]">V1.0</span></span>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex flex-col items-end mr-4">
-              <span className="text-[10px] font-heading text-white tracking-widest uppercase">{userData?.full_name || 'GUEST_USER'}</span>
-              <span className="text-[8px] font-mono text-cyan-accent uppercase tracking-tighter">CREDITS: {userData?.credits ?? '--'} GENS</span>
-            </div>
-            <Button variant="ghost" onClick={() => router.push('/master-resume')} className="h-9 px-4 border border-white/10 hover:border-cyan-accent text-[10px] font-heading tracking-widest uppercase">
-              Modify Master Profile
-            </Button>
-          </div>
-        </header>
-
-        <main className="pt-24 px-4 md:px-8 max-w-[1400px] mx-auto">
+        <main className="pt-24 sm:pt-32 px-4 md:px-8 max-w-[1400px] mx-auto">
           <StatsBanner stats={stats} />
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">

@@ -5,7 +5,8 @@ import {
   SignedIn,
   SignedOut,
   SignInButton,
-  UserButton
+  UserButton,
+  useUser
 } from '@clerk/clerk-react';
 import { LucideTerminal, LucideLayoutDashboard, LucideUser, LucideMenu } from 'lucide-react';
 import { Button } from './ui/button';
@@ -16,7 +17,10 @@ import MobileMenu from './MobileMenu';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { user } = useUser();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const displayName = user?.fullName || "ANONYMOUS_OPERATOR";
 
   const playHaptic = async (style = ImpactStyle.Light) => {
     try {
@@ -94,6 +98,14 @@ export default function Navbar() {
 
             {/* User Controls */}
             <div className="pl-4 sm:border-l border-white/10 flex items-center gap-4">
+              <SignedIn>
+                <div className="hidden md:flex flex-col items-end mr-2">
+                  <span className="text-[8px] font-mono text-cyan-accent uppercase tracking-tighter">System Status</span>
+                  <span className="text-[10px] font-heading text-white tracking-widest uppercase truncate max-w-[150px]">
+                    {displayName}
+                  </span>
+                </div>
+              </SignedIn>
               <UserButton
                 appearance={{
                   elements: {
