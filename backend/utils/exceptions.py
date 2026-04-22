@@ -9,7 +9,7 @@ class ResumeMaxxingException(HTTPException):
         self.details = details or {}
 
 class QuotaExceededException(ResumeMaxxingException):
-    def __init__(self, message: str = "Generation quota exceeded. Upgrade to Pro for more generations."):
+    def __init__(self, message: str = "Generation quota exceeded. Invite friends to get more resources. Note: Premium tiers are coming in a future protocol update."):
         super().__init__(
             status_code=403,
             code="QUOTA_EXCEEDED",
@@ -17,7 +17,7 @@ class QuotaExceededException(ResumeMaxxingException):
         )
 
 class LimitReachedException(ResumeMaxxingException):
-    def __init__(self, message: str = "Resource limit reached. Upgrade to Pro to unlock more capacity."):
+    def __init__(self, message: str = "Resource limit reached. Invite friends to expand your HUD capacity. Note: Premium tiers are coming in a future protocol update."):
         super().__init__(
             status_code=403,
             code="LIMIT_REACHED",

@@ -81,7 +81,7 @@ export default function ActivityFeed() {
                 className="flex gap-4 items-start py-2 border-b border-white/[0.02] last:border-0"
               >
                 <span className="text-[10px] font-mono text-cyan-accent/30 whitespace-nowrap pt-0.5">
-                  [{new Date(log.timestamp).toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' })}]
+                  [{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}]
                 </span>
                 <div className="flex flex-col">
                   <span className="text-[9px] font-mono font-bold text-white/20 mb-0.5 uppercase tracking-tighter">

@@ -65,7 +65,7 @@ async def create_job(request: Request, payload: JobCreate, current_user: dict = 
     job_count = count_result.scalar() or 0
     
     if job_count >= total_quota:
-        raise LimitReachedException(f"TIER LIMIT: You have reached your limit of {total_quota} tracked jobs. Invite friends or upgrade to Pro for more.")
+        raise LimitReachedException(f"TIER LIMIT: You have reached your limit of {total_quota} tracked jobs. Invite friends to expand your HUD capacity. Note: Premium tiers are coming in a future protocol update.")
     
     # 2. Create the job (Sanitized)
     db_job = TrackedJob(

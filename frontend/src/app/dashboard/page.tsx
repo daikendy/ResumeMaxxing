@@ -226,6 +226,7 @@ export default function DashboardPage() {
             onRedeem={handleRedeemCode}
             onInputChange={setReferralInput}
             playHaptic={playHaptic}
+            hasRedeemed={!!userData?.referred_by}
           />
           <JobTracker
             searchTerm={searchTerm} onSearchChange={setSearchTerm}

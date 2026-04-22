@@ -76,5 +76,6 @@ export interface UserProfile {
   generations_used: number;
   generations_limit: number;
   referral_code: string;
+  referred_by: string | null;
   bonus_quota: number;
 }
