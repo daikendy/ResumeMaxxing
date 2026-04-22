@@ -9,19 +9,36 @@ export const generatePrintStyles = (pageSize: string) => `
       size: ${pageSize === 'A4' ? 'A4' : 'letter'} portrait;
       margin: 0 !important;
     }
-    
-    #printable-resume-mount {
-      display: flex !important;
-      flex-direction: column !important;
+
+    html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background: white !important;
+      height: 100% !important;
+    }
+
+    /* Hide all UI elements but preserve layout flow for centering */
+    body * {
+      visibility: hidden !important;
+    }
+
+    #printable-resume-mount,
+    #printable-resume-mount * {
       visibility: visible !important;
-      position: absolute !important;
+    }
+
+    /* Snap the resume to the top using Fixed positioning to bypass ghost spacing */
+    #printable-resume-mount {
+      display: block !important;
+      position: fixed !important;
       top: 0 !important;
-      left: 0 !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
       background: white !important;
       border: none !important;
       box-shadow: none !important;
-      transform: none !important;
-      z-index: 999999 !important;
+      padding: 0 !important;
+      z-index: 9999999 !important;
     }
 
     #printable-resume-mount.size-a4 {
@@ -37,15 +54,15 @@ export const generatePrintStyles = (pageSize: string) => `
     }
 
     #resume-export-target {
-      margin-top: -10mm !important;
+      margin-top: -35mm !important; /* Ultimate snap for absolute edge precision */
+      position: relative !important;
+      z-index: 10 !important;
     }
 
-    /* Neutralize all scaling and positioning for print */
-    div[style*="transform"], .print-path {
+    /* Neutralize scaling but preserve identity */
+    div[style*="transform"].print-path {
       transform: none !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      display: block !important;
     }
+  }
   }
 `;

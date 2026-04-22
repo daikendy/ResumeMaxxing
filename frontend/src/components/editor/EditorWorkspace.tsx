@@ -27,7 +27,7 @@ export function EditorWorkspace() {
   return (
     <div className="flex-grow flex flex-col items-center p-4 md:p-8 overflow-y-auto custom-scrollbar relative bg-[#0a0a0a]">
       {/* HUD Scanline specific to the preview area */}
-      <div className="absolute inset-0 pointer-events-none opacity-30 hud-scanline z-0" />
+      <div className="absolute inset-0 pointer-events-none opacity-30 hud-scanline z-0 no-print" />
       
       <div className="max-w-5xl w-full flex flex-col items-center relative z-10">
         
@@ -36,7 +36,7 @@ export function EditorWorkspace() {
           <motion.div 
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-[850px] mb-8 hud-border p-8 flex items-center justify-between relative overflow-hidden"
+            className="w-full max-w-[850px] mb-8 hud-border p-8 flex items-center justify-between relative overflow-hidden no-print"
           >
             <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-cyan-accent/20" />
             <div className="relative z-10">
