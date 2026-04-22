@@ -86,11 +86,9 @@ export default function MasterResumePage() {
   const [lastSavedHash, setLastSavedHash] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'uploading' | 'saving' | 'error'>('loading');
   const [errorMsg, setErrorMsg] = useState('');
-  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Uploaded resume viewer state
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
-  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [showResumeViewer, setShowResumeViewer] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -149,7 +147,6 @@ export default function MasterResumePage() {
     setErrorMsg('');
     const objectUrl = URL.createObjectURL(file);
     setUploadedFileUrl(objectUrl);
-    setUploadedFileName(file.name);
     try {
       const token = await getToken();
       if (!token) throw new Error("No session found");
@@ -182,7 +179,6 @@ export default function MasterResumePage() {
     setSkills([]);
     setProjects([]);
     setErrorMsg('');
-    setSaveSuccess(false);
     playHaptic(ImpactStyle.Heavy);
     toast.info("BUFFER_CLEARED");
   }, []);
@@ -198,8 +194,6 @@ export default function MasterResumePage() {
       if (!token) throw new Error("No session found");
       await resumeService.saveMasterResume(parsedJson, token);
       setLastSavedHash(JSON.stringify(parsedJson));
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
       setStatus('idle');
       toast.success("PROFILE_SYNC: SUCCESS");
     } catch (error: any) {

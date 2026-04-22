@@ -2,9 +2,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from models.vault_model import VaultSnapshot, ActivityLog
 from datetime import datetime
-from typing import List
+from typing import Sequence
 
-async def log_activity(db: AsyncSession, user_id: str, action_code: str, description: str):
+async def log_activity(db: AsyncSession, user_id: str, action_code: str, description: str) -> ActivityLog:
     """Log a system action to the HUD telemetry feed."""
     new_log = ActivityLog(
         user_id=user_id,
@@ -17,7 +17,7 @@ async def log_activity(db: AsyncSession, user_id: str, action_code: str, descrip
     await db.refresh(new_log)
     return new_log
 
-async def get_recent_activity(db: AsyncSession, user_id: str, limit: int = 10) -> List[ActivityLog]:
+async def get_recent_activity(db: AsyncSession, user_id: str, limit: int = 10) -> Sequence[ActivityLog]:
     """Fetch recent telemetry for the HUD activity feed."""
     result = await db.execute(
         select(ActivityLog)
@@ -27,7 +27,7 @@ async def get_recent_activity(db: AsyncSession, user_id: str, limit: int = 10) -
     )
     return result.scalars().all()
 
-async def create_snapshot(db: AsyncSession, user_id: str, name: str, data: dict):
+async def create_snapshot(db: AsyncSession, user_id: str, name: str, data: dict) -> VaultSnapshot:
     """Store a new snapshot in the Master Vault."""
     snapshot = VaultSnapshot(
         user_id=user_id,
@@ -40,7 +40,7 @@ async def create_snapshot(db: AsyncSession, user_id: str, name: str, data: dict)
     await db.refresh(snapshot)
     return snapshot
 
-async def get_snapshots(db: AsyncSession, user_id: str) -> List[VaultSnapshot]:
+async def get_snapshots(db: AsyncSession, user_id: str) -> Sequence[VaultSnapshot]:
     """List all vaulted items for a user."""
     result = await db.execute(
         select(VaultSnapshot)

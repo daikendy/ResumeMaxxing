@@ -8,12 +8,7 @@ import { LucideTerminal, LucideActivity } from 'lucide-react';
 import { formatHudTime } from '@/lib/utils';
 import { HUD_EVENT_SYNC } from '@/lib/constants';
 
-interface Activity {
-  id: number;
-  action_code: string;
-  description: string;
-  timestamp: string;
-}
+import { ActivityLog as Activity, VaultSnapshot as Snapshot } from '@/types/resume';
 
 export default function ActivityFeed() {
   const { getToken } = useAuth();

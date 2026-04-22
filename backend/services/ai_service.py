@@ -92,14 +92,17 @@ async def tailor_resume(raw_resume: dict, job_description: str, job_title: str) 
         )
         latency = (asyncio.get_event_loop().time() - start_time) * 1000
         
-        tokens = response.usage.total_tokens
+        tokens = getattr(response.usage, "total_tokens", 0) if response.usage else 0
         logger.info("AI_GENERATION_SUCCESS", 
                     service="tailor_resume", 
                     latency_ms=f"{latency:.2f}ms", 
                     tokens=tokens)
 
         # Parse the AI's string response back into a Python dictionary
-        tailored_json = json.loads(response.choices[0].message.content)
+        content = response.choices[0].message.content
+        if content is None:
+            raise Exception("AI returned empty content")
+        tailored_json: dict = json.loads(content)
         return tailored_json
         
     except Exception as e:
@@ -165,7 +168,10 @@ async def extract_resume_data(pdf_text: str) -> dict:
             ],
             timeout=60.0
         )
-        return json.loads(response.choices[0].message.content)
+        content = response.choices[0].message.content
+        if content is None:
+            raise Exception("AI returned empty content")
+        return json.loads(content)
     except Exception as e:
         logger.error("AI_PDF_PARSE_FAILED", error=str(e))
         raise Exception(f"Failed to parse PDF using OpenAI: {str(e)}")
@@ -195,7 +201,10 @@ async def preprocess_job_description(jd_text: str):
             ],
             timeout=30.0
         )
-        return json.loads(response.choices[0].message.content)
+        content = response.choices[0].message.content
+        if content is None:
+            return None
+        return json.loads(content)
     except Exception as e:
         logger.error("JD_PREPROCESS_FAILED", error=str(e))
         return None
@@ -229,7 +238,8 @@ async def summarize_master_resume(resume_data: dict) -> str:
             temperature=0.3,
             timeout=15.0
         )
-        return response.choices[0].message.content.strip()
+        content = response.choices[0].message.content
+        return content.strip() if content else f"Snapshot - {asyncio.get_event_loop().time()}"
     except Exception as e:
         logger.error("AI_SUMMARY_FAILED", error=str(e))
         return f"Snapshot - {asyncio.get_event_loop().time()}"

@@ -16,6 +16,8 @@ export default function MobileAppHome() {
     } catch (e) {}
   };
 
+  const systemId = React.useMemo(() => Math.random().toString(36).substr(2, 9).toUpperCase(), []);
+
   return (
     <div className="h-screen fixed inset-0 bg-black flex flex-col items-center justify-center p-8 overflow-hidden touch-none selection:none">
       {/* Background HUD Layers */}
@@ -138,7 +140,7 @@ export default function MobileAppHome() {
         transition={{ delay: 1.5 }}
         className="absolute bottom-safe-bottom pb-8 left-0 w-full px-12 flex justify-between items-center"
       >
-         <span className="text-[8px] font-mono">ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}</span>
+         <span className="text-[8px] font-mono">ID: {systemId}</span>
          <div className="flex items-center gap-1">
             <div className="w-1 h-1 rounded-full bg-cyan-accent animate-ping" />
             <span className="text-[8px] font-mono uppercase">Uplink_STABLE</span>

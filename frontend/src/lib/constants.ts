@@ -21,7 +21,7 @@ export const LIMITS = {
 export const playHaptic = async (style = ImpactStyle.Light) => {
   try {
     await Haptics.impact({ style });
-  } catch (e) {}
+  } catch {}
 };
 
 export const getCounterColor = (length: number, max: number) => {

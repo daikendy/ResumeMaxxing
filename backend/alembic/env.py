@@ -15,12 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 load_dotenv()
 
 # 🛡️ Import Database metadata and all Models
-from database import Base, SQLALCHEMY_DATABASE_URL
-import models.user_model
-import models.resume_model
-import models.job_model
-import models.master_resume_model
-import models.vault_model
+from database import Base, SQLALCHEMY_DATABASE_URL  # noqa: E402
 
 # Alembic config
 config = context.config

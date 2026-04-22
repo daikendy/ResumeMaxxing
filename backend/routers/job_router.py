@@ -73,7 +73,7 @@ async def create_job(request: Request, payload: JobCreate, current_user: dict = 
         user_id=user_id,
         company_name=sanitize_text(payload.company_name),
         job_title=sanitize_text(payload.job_title),
-        job_description=sanitize_text(payload.job_description),
+        job_description=sanitize_text(payload.job_description or ""),
         job_url=payload.job_url,
         status='bookmarked',
         created_at=datetime.utcnow()
@@ -98,8 +98,10 @@ async def create_job(request: Request, payload: JobCreate, current_user: dict = 
         .options(selectinload(TrackedJob.resume_versions))
         .filter(TrackedJob.id == db_job.id)
     )
-    db_job = result.scalars().first()
-    return db_job
+    final_job = result.scalars().first()
+    if not final_job:
+        raise HTTPException(status_code=500, detail="Failed to retrieve created job")
+    return final_job
 
 @router.delete("/{job_id}")
 async def delete_tracked_job(job_id: int, current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):

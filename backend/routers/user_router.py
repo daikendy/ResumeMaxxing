@@ -10,15 +10,12 @@ from auth_utils import get_current_user, sync_user_to_db
 from crud import user_crud, resume_crud
 from database import get_db
 from models.master_resume_model import MasterResume
-from models.user_model import User
 from schemas.master_resume_schema import MasterResumeCreate, MasterResumeResponse
 from schemas.user_schema import UserResponse, RedeemCodeRequest
 from services.ai_service import extract_resume_data
-from utils.sanitization import sanitize_data
 from utils.limiter import limiter
 
 # Vault Imports
-from models.vault_model import VaultSnapshot, ActivityLog
 from schemas.vault_schema import VaultSnapshotResponse, ActivityLogResponse, VaultRestoreRequest
 from crud import vault_crud
 from services.ai_service import summarize_master_resume
@@ -44,7 +41,7 @@ async def upload_resume(request: Request, file: UploadFile = File(...), current_
     """Extract data from a PDF resume using OCR/Text extraction and AI parsing."""
     await sync_user_to_db(current_user, db)
     
-    if not file.filename.endswith('.pdf'):
+    if not file.filename or not file.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
         
     try:
@@ -59,16 +56,15 @@ async def upload_resume(request: Request, file: UploadFile = File(...), current_
         # 2. Extract hyperlink annotations (GitHub, LinkedIn, etc.)
         hyperlinks = []
         for page in pdf_reader.pages:
-            if "/Annots" in page:
-                annotations = page["/Annots"]
-                for annot in annotations:
-                    annot_obj = annot.get_object()
-                    if annot_obj.get("/Subtype") == "/Link":
-                        action = annot_obj.get("/A")
-                        if action and "/URI" in action:
-                            uri = action["/URI"]
-                            if uri not in hyperlinks:
-                                hyperlinks.append(uri)
+            annotations = page.get("/Annots", [])
+            for annot in annotations: # type: ignore
+                annot_obj = annot.get_object()
+                if annot_obj.get("/Subtype") == "/Link":
+                    action = annot_obj.get("/A")
+                    if action and "/URI" in action:
+                        uri = action["/URI"]
+                        if uri not in hyperlinks:
+                            hyperlinks.append(uri)
         
         if hyperlinks:
             text += "\n\n[HYPERLINKS]\n"

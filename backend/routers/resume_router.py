@@ -8,7 +8,6 @@ from auth_utils import get_current_user, sync_user_to_db
 from database import get_db
 from models.job_model import TrackedJob
 from models.resume_model import ResumeVersion
-from models.user_model import User
 from schemas.resume_schema import ResumeCreate, ResumeResponse
 from services.ai_service import tailor_resume
 from utils.exceptions import QuotaExceededException
@@ -40,7 +39,7 @@ async def generate_tailored_resume(request: Request, payload: ResumeCreate, curr
     # 3. Call the AI Engine
     tailored_content = await tailor_resume(
         raw_resume=payload.raw_resume_data,
-        job_description=job.job_description,
+        job_description=job.job_description or "",
         job_title=job.job_title
     )
 

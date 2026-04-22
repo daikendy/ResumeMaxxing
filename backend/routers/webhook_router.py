@@ -27,7 +27,7 @@ async def clerk_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     
     try:
         wh = Webhook(CLERK_WEBHOOK_SECRET)
-        evt = wh.verify(payload, headers)
+        evt = wh.verify(payload, dict(headers))
     except WebhookVerificationError as e:
         logger.error("WEBHOOK_VERIFICATION_FAILED", error=str(e))
         raise HTTPException(status_code=400, detail="Invalid signature")

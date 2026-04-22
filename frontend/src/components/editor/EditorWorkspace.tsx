@@ -14,9 +14,10 @@ export function EditorWorkspace() {
   
   // Memoized Scores for performance
   const matchScore = useMemo(() => {
-    if (!resumeData?.resume_content || !store.targetJobDescription) return 0;
-    return calculateMatchScore(store.targetJobDescription, resumeData.resume_content);
-  }, [resumeData?.resume_content, store.targetJobDescription]);
+    const content = resumeData?.resume_content;
+    if (!content || !store.targetJobDescription) return 0;
+    return calculateMatchScore(store.targetJobDescription, content);
+  }, [resumeData, store.targetJobDescription]);
 
   const originalScore = useMemo(() => {
     if (!store.masterProfile || !store.targetJobDescription) return 0;

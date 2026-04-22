@@ -6,10 +6,8 @@ import { useAuth } from '@clerk/clerk-react';
 import { resumeService } from '@/lib/api/services/resumeService';
 import { HUD_EVENT_SYNC } from '@/lib/constants';
 import { AuthGuard } from '@/components/AuthGuard';
-import { PremiumModal } from '@/components/PremiumModal';
 import { Button } from '@/components/ui/button';
 import {
-  LucideLayoutDashboard,
   LucideBriefcase,
   LucideShieldCheck,
   LucideCheckCircle2,
@@ -60,13 +58,6 @@ export default function DashboardPage() {
     job_url: string;
   }>({ id: null, job_title: '', company_name: '', job_description: '', job_url: '' });
 
-  useEffect(() => {
-    if (isLoaded) {
-      fetchJobs();
-      fetchUserData();
-    }
-  }, [isLoaded]);
-
   const fetchJobs = async () => {
     try {
       const token = await getToken();
@@ -88,6 +79,13 @@ export default function DashboardPage() {
       console.error("Failed to fetch user profile", e);
     }
   };
+
+  useEffect(() => {
+    if (isLoaded) {
+      fetchJobs();
+      fetchUserData();
+    }
+  }, [isLoaded]);
 
   const stats = useMemo(() => {
     const counts = { total: jobs.length, applied: 0, interviewing: 0, hired: 0, rejected: 0, bookmarked: 0 };

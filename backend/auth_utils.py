@@ -19,13 +19,13 @@ load_dotenv()
 # Clerk Configuration
 CLERK_FRONTEND_API = os.getenv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY")
 CLERK_API_KEY = os.getenv("CLERK_SECRET_KEY")
-CLERK_JWKS_URL = os.getenv("CLERK_JWKS_URL")
+CLERK_JWKS_URL = os.getenv("CLERK_JWKS_URL", "")
 
 security = HTTPBearer()
 
 # 🛡️ JWKS CACHE STATE
-_jwks_cache = None
-_jwks_last_fetched = 0
+_jwks_cache: Optional[dict] = None
+_jwks_last_fetched: float = 0
 JWKS_TTL = 86400  # 24 Hours
 
 async def _fetch_jwks() -> dict:

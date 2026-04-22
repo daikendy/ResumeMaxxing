@@ -44,7 +44,7 @@ export default function TermsPage() {
               <h3 className="text-lg font-black uppercase tracking-widest">01 / Acceptance</h3>
             </div>
             <p className="text-zinc-400 text-sm leading-relaxed font-mono">
-              By accessing "ResumeMaxxing" (the "Platform"), you acknowledge that you have read, understood, and agreed to be bound by these Terms. If you do not agree to these terms, you are not authorized to use our AI tailoring engine.
+              By accessing &quot;ResumeMaxxing&quot; (the &quot;Platform&quot;), you acknowledge that you have read, understood, and agreed to be bound by these Terms. If you do not agree to these terms, you are not authorized to use our AI tailoring engine.
             </p>
           </section>
 
@@ -58,10 +58,10 @@ export default function TermsPage() {
             </div>
             <div className="p-6 bg-amber-500/5 border border-amber-500/20 rounded-sm">
               <p className="text-amber-500/80 text-sm leading-relaxed font-mono italic mb-4">
-                "GEN-AI IS AN ASSISTANT, NOT A GUARANTOR."
+                &quot;GEN-AI IS AN ASSISTANT, NOT A GUARANTOR.&quot;
               </p>
               <p className="text-zinc-400 text-sm leading-relaxed font-mono">
-                The Platform uses enterprise-grade AI to assist in resume generation. AI models may produce inaccurate, biased, or unintended outputs ("Hallucinations"). <strong className="text-white">The user is solely responsible</strong> for reviewing, editing, and verifying the accuracy of all content before submitting it to employers. We are not liable for missed employment opportunities, incorrect contact info, or any damages resulting from AI-generated text.
+                The Platform uses enterprise-grade AI to assist in resume generation. AI models may produce inaccurate, biased, or unintended outputs (&quot;Hallucinations&quot;). <strong className="text-white">The user is solely responsible</strong> for reviewing, editing, and verifying the accuracy of all content before submitting it to employers. We are not liable for missed employment opportunities, incorrect contact info, or any damages resulting from AI-generated text.
               </p>
             </div>
           </section>

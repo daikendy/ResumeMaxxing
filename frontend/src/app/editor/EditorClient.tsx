@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { useResumeStore } from '@/store/useResumeStore';
 import { ImpactStyle, Haptics } from '@capacitor/haptics';
 import { SITE_CONFIG } from '@/lib/config';
+import { ResumeVersion } from '@/types/resume';
 
 // New Atomic Components (Centralized)
 import { EditorToolbar } from '@/components/editor/EditorToolbar';
@@ -52,7 +53,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
               store.setStatus('success');
               
               // Match the active version if possible
-              const activeIndex = job.resume_versions.findIndex((v: any) => v.is_active);
+              const activeIndex = job.resume_versions.findIndex((v: ResumeVersion) => v.is_active);
               if (activeIndex !== -1) {
                 store.jumpTo(activeIndex);
               }
@@ -70,6 +71,7 @@ export default function EditorClient({ jobId }: { jobId: string }) {
     if (isLoaded) {
       fetchData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId, isLoaded]);
 
   // 2. Print Dynamic Stylist (Synchronized with PageSize)

@@ -79,3 +79,19 @@ export interface UserProfile {
   referred_by: string | null;
   bonus_quota: number;
 }
+
+export interface VaultSnapshot {
+  id: number;
+  user_id: string;
+  name: string;
+  resume_data: ResumeContent;
+  created_at: string;
+}
+
+export interface ActivityLog {
+  id: number;
+  user_id: string;
+  action_code: string;
+  description: string;
+  timestamp: string;
+}

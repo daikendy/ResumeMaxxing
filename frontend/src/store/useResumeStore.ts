@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ResumeVersion, ResumeContent, MasterProfile } from '@/types/resume';
+import { ResumeVersion, ResumeContent } from '@/types/resume';
 
 interface ResumeState {
   // --- Data & History ---

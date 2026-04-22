@@ -1,6 +1,4 @@
-import os
 import time
-from typing import List
 
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from contextlib import asynccontextmanager
 
 # Local Imports
-import models
 from database import get_db
 from routers import resume_router, user_router, job_router, webhook_router
 from utils.exceptions import ResumeMaxxingException
@@ -96,7 +93,7 @@ async def attach_user_to_state(request: Request, call_next):
     from auth_utils import decode_token_silent
     
     auth_header = request.headers.get("Authorization")
-    request.state.user_id = await decode_token_silent(auth_header)
+    request.state.user_id = await decode_token_silent(auth_header or "")
     
     return await call_next(request)
 

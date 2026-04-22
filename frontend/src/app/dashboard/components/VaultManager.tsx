@@ -6,17 +6,13 @@ import { resumeService } from '@/lib/api/services/resumeService';
 import { formatHudDate } from '@/lib/utils';
 import { HUD_EVENT_SYNC } from '@/lib/constants';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LucideShieldCheck, LucideDatabase, LucideRotateCcw, LucidePlus, LucideLoader2, LucideTrash2, LucideAlertTriangle, LucideX } from 'lucide-react';
+import { LucideShieldCheck, LucideDatabase, LucideRotateCcw, LucidePlus, LucideLoader2, LucideTrash2, LucideAlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
-interface Snapshot {
-  id: number;
-  name: string;
-  created_at: string;
-}
+import { VaultSnapshot as Snapshot } from '@/types/resume';
 
 export default function VaultManager() {
   const { getToken } = useAuth();
@@ -31,10 +27,6 @@ export default function VaultManager() {
 
   const CONFIRMATION_PHRASE = "DELETE_ARCHIVE";
 
-  useEffect(() => {
-    fetchSnapshots();
-  }, [getToken]);
-
   const fetchSnapshots = async () => {
     try {
       const token = await getToken();
@@ -48,6 +40,10 @@ export default function VaultManager() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchSnapshots();
+  }, [getToken]);
 
   const handleCapture = async () => {
     setIsCapturing(true);

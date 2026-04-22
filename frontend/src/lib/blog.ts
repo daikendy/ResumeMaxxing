@@ -50,7 +50,7 @@ export function getPostBySlug(slug: string): BlogPost | null {
       content,
       ...(data as { title: string; date: string; description: string; author: string; tags: string[] }),
     };
-  } catch (e) {
+  } catch {
     return null;
   }
 }

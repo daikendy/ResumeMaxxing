@@ -1,3 +1,5 @@
+import { ResumeContent } from '@/types/resume';
+
 /**
  * Utilities for analyzing keyword alignment between job descriptions and resumes.
  */
@@ -16,7 +18,7 @@ const STOP_WORDS = new Set([
  * @param generatedResume The resume content object.
  * @returns A percentage score from 0 to 100.
  */
-export function calculateMatchScore(jobDescription: string, generatedResume: any): number {
+export function calculateMatchScore(jobDescription: string, generatedResume: ResumeContent): number {
   if (!jobDescription || !generatedResume) return 0;
 
   // 1. Clean and tokenize JD
