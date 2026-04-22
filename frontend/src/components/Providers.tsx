@@ -4,6 +4,7 @@ import { ClerkProvider } from "@clerk/clerk-react";
 import { dark } from "@clerk/themes";
 import { Toaster } from "sonner";
 import Navbar from "@/components/Navbar";
+import { tokenCache } from "@/lib/auth/tokenCache";
 
 const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
