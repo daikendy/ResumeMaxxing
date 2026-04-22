@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
   },
   transpilePackages: ['@clerk/nextjs'],
   async headers() {
+    const isDev = process.env.NODE_ENV === 'development';
+    const connectSrc = isDev
+      ? "connect-src * 'self' blob: data: gap:; "
+      : "connect-src 'self' capacitor://localhost http://localhost https://api.clerk.com https://*.clerk.accounts.dev https://api.openai.com; ";
+
     return [
       {
         source: '/(.*)',
@@ -15,13 +20,13 @@ const nextConfig: NextConfig = {
           {
             key: 'Content-Security-Policy',
             value: "default-src 'self' capacitor://localhost http://localhost; " +
-                   "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://api.clerk.com https://*.clerk.accounts.dev; " +
-                   "worker-src 'self' blob:; " +
-                   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-                   "font-src 'self' https://fonts.gstatic.com; " +
-                   "img-src 'self' blob: data: https:; " +
-                   "connect-src 'self' capacitor://localhost http://localhost http://localhost:8000 https://api.clerk.com https://*.clerk.accounts.dev https://api.openai.com; " +
-                   "frame-ancestors 'none'"
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://api.clerk.com https://*.clerk.accounts.dev; " +
+              "worker-src 'self' blob:; " +
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+              "font-src 'self' https://fonts.gstatic.com; " +
+              "img-src 'self' blob: data: https:; " +
+              connectSrc +
+              "frame-ancestors 'none'"
           },
           {
             key: 'X-Content-Type-Options',

@@ -1,0 +1,22 @@
+# Secrets
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv
+venv/
+ENV/
+env/
+.mypy_cache/
+.ruff_cache/
+
+# Databases
+*.sqlite3
+*.db
+
+# OS
+.DS_Store
+Thumbs.db

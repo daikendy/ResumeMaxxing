@@ -23,7 +23,8 @@ load_dotenv()
 
 host = os.getenv("HOST", "0.0.0.0")
 port = int(os.getenv("PORT", 8000))
-is_dev = os.getenv("ENVIRONMENT", "development") == "development"
+is_dev = os.getenv("ENVIRONMENT", "development").lower() == "development"
+print(f"🚀 SYSTEM_STARTUP: Environment set to {'DEVELOPMENT' if is_dev else 'PRODUCTION'}")
 
 # 🛡️ ALLOWED ORIGINS: Explicit list (CORS spec requires this with credentials)
 # Capacitor uses capacitor://localhost (iOS) and http://localhost (Android)
@@ -60,15 +61,6 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 
-# 📡 CORS: Explicit origin whitelist (SECURITY: wildcard + credentials is a spec violation)
-# Capacitor origins are included for mobile app support.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
-)
 
 # 🛡️ THE SENTINEL: Global Error Handler
 @app.exception_handler(Exception)
@@ -117,17 +109,26 @@ async def limit_request_size(request: Request, call_next):
 async def add_security_headers(request: Request, call_next):
     response: Response = await call_next(request)
     
-    # Content-Security-Policy: allows Capacitor webview, inline styles (resume editor), and OpenAI API
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self' capacitor://localhost http://localhost; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.clerk.accounts.dev; "
-        "worker-src 'self' blob:; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-        "font-src 'self' https://fonts.gstatic.com; "
-        "img-src 'self' blob: data: https:; "
-        f"connect-src 'self' capacitor://localhost http://localhost {host if host != '0.0.0.0' else ''} https://api.clerk.com https://*.clerk.accounts.dev https://api.openai.com; "
-        "frame-ancestors 'none'"
-    )
+    # Check environment inside the function to avoid global caching issues
+    current_env = os.getenv("ENVIRONMENT", "development").lower()
+    
+    # 🛡️ Content-Security-Policy
+    if current_env == "development":
+        response.headers["Content-Security-Policy"] = (
+            "default-src * 'self' capacitor://localhost http://localhost data: blob: 'unsafe-inline' 'unsafe-eval'; "
+            "connect-src * 'self' blob: data: gap:; "
+            "frame-ancestors 'none'"
+        )
+    else:
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self' capacitor://localhost http://localhost; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.clerk.accounts.dev; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "img-src 'self' blob: data: https:; "
+            "connect-src 'self' capacitor://localhost http://localhost https://api.clerk.com https://*.clerk.accounts.dev https://api.openai.com; "
+            "frame-ancestors 'none'"
+        )
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
@@ -166,6 +167,15 @@ async def log_requests(request: Request, call_next):
                 latency_ms=f"{process_time:.2f}ms")
     
     return response
+
+# 📡 CORS: Move to outermost layer to handle preflights first
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
+)
 
 # Attach Routers
 app.include_router(resume_router.router)
