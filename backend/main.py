@@ -1,10 +1,12 @@
+import os
 import time
 
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+from dotenv import load_dotenv
 
 from contextlib import asynccontextmanager
 
@@ -16,6 +18,15 @@ from utils.logging_config import setup_logging, logger
 from utils.limiter import limiter
 from slowapi.errors import RateLimitExceeded
 from auth_utils import get_jwks
+
+load_dotenv()
+
+# 🛡️ ALLOWED ORIGINS: Explicit list (CORS spec requires this with credentials)
+# Capacitor uses capacitor://localhost (iOS) and http://localhost (Android)
+ALLOWED_ORIGINS = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:3000,http://localhost:8100,capacitor://localhost,http://localhost"
+).split(",")
 
 # 📝 Initialize Logging
 setup_logging()
@@ -45,13 +56,14 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 
-# 📡 THE "UNBLOCKER": Proactive CORS Hardening
+# 📡 CORS: Explicit origin whitelist (SECURITY: wildcard + credentials is a spec violation)
+# Capacitor origins are included for mobile app support.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allow all for local dev to prevent Axios Network Error
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
 )
 
 # 🛡️ THE SENTINEL: Global Error Handler
@@ -82,6 +94,46 @@ async def rate_limit_exception_handler(request: Request, exc: RateLimitExceeded)
             "message": "Shields Up! You are moving too fast. Please wait a few seconds and try again."
         }
     )
+
+# 🛡️ SECURITY: Request Body Size Limit (M1)
+# Rejects requests with bodies larger than 10MB to prevent DoS.
+@app.middleware("http")
+async def limit_request_size(request: Request, call_next):
+    content_length = request.headers.get("Content-Length")
+    if content_length and int(content_length) > 10 * 1024 * 1024:
+        return JSONResponse(
+            status_code=413,
+            content={"status": "error", "code": "PAYLOAD_TOO_LARGE", "message": "Request body exceeds 10MB limit."}
+        )
+    return await call_next(request)
+
+# 🛡️ SECURITY HEADERS MIDDLEWARE
+# Capacitor-safe: allows capacitor: and blob: schemes in CSP
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response: Response = await call_next(request)
+    
+    # Content-Security-Policy: allows Capacitor webview, inline styles (resume editor), and OpenAI API
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self' capacitor://localhost http://localhost; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.clerk.accounts.dev; "
+        "worker-src 'self' blob:; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self' blob: data: https:; "
+        "connect-src 'self' capacitor://localhost http://localhost http://localhost:8000 https://api.clerk.com https://*.clerk.accounts.dev https://api.openai.com; "
+        "frame-ancestors 'none'"
+    )
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    
+    # HSTS: only in production (breaks localhost without HTTPS)
+    if os.getenv("ENVIRONMENT", "development") == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    
+    return response
 
 # 📡 TELEMETRY & AUTH: Request Processing Pipeline
 @app.middleware("http")

@@ -14,8 +14,11 @@ router = APIRouter(
     tags=["webhooks"]
 )
 
-# Set this in your .env file in production
-CLERK_WEBHOOK_SECRET = os.getenv("CLERK_WEBHOOK_SECRET", "whsec_test_secret_for_dev")
+# SECURITY: No default — must be explicitly configured.
+# Forged webhooks with a known default could delete any user.
+CLERK_WEBHOOK_SECRET = os.getenv("CLERK_WEBHOOK_SECRET", "")
+if not CLERK_WEBHOOK_SECRET:
+    logger.warning("WEBHOOK_CONFIG_MISSING", detail="CLERK_WEBHOOK_SECRET not set — webhook verification will reject all requests.")
 
 @router.post("/clerk")
 @limiter.limit("60/minute") # 🛡️ Stability Shield

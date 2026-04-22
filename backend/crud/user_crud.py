@@ -1,4 +1,4 @@
-import random
+import secrets
 import string
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -6,7 +6,9 @@ from models.user_model import User
 from schemas.user_schema import UserCreate
 
 def generate_referral_code():
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    """SECURITY (M2): Use cryptographically secure entropy."""
+    alphabet = string.ascii_uppercase + string.digits
+    return ''.join(secrets.choice(alphabet) for _ in range(6))
 
 # Read
 async def get_user(db: AsyncSession, user_id: str):
@@ -27,11 +29,14 @@ async def create_user(db: AsyncSession, user: UserCreate):
     unique_code = generate_referral_code()
     
     # ⚡ ASYNC COLLISION CHECK (SQLAlchemy 2.0)
-    while True:
+    # ⚡ ASYNC COLLISION CHECK with Safety Guard
+    attempts = 0
+    while attempts < 10:
         result = await db.execute(select(User).filter(User.referral_code == unique_code))
         if not result.scalars().first():
             break
         unique_code = generate_referral_code()
+        attempts += 1
 
     db_user = User(
         id=user.id, 

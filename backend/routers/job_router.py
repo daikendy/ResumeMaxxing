@@ -13,7 +13,7 @@ from models.job_model import TrackedJob
 from models.user_model import User
 from schemas.job_schema import JobCreate, JobResponse, JobUpdate
 from utils.exceptions import LimitReachedException
-from utils.sanitization import sanitize_text
+from utils.sanitization import sanitize_text, sanitize_url
 from utils.limiter import limiter
 from crud import vault_crud
 
@@ -74,7 +74,7 @@ async def create_job(request: Request, payload: JobCreate, current_user: dict = 
         company_name=sanitize_text(payload.company_name),
         job_title=sanitize_text(payload.job_title),
         job_description=sanitize_text(payload.job_description or ""),
-        job_url=payload.job_url,
+        job_url=sanitize_url(payload.job_url),  # SECURITY (H5): Validate URL scheme
         status='bookmarked',
         created_at=datetime.utcnow()
     )
@@ -135,11 +135,11 @@ async def update_tracked_job(job_id: int, payload: JobUpdate, current_user: dict
     if not job:
         raise HTTPException(status_code=404, detail="Job not found or access denied")
     
-    # Apply updates dynamically
+    # Apply updates dynamically (SECURITY H6: sanitize all user inputs consistently)
     if payload.status is not None:
         job.status = payload.status
     if payload.job_url is not None:
-        job.job_url = payload.job_url
+        job.job_url = sanitize_url(payload.job_url)  # SECURITY (H5): Validate URL scheme
     if payload.job_title is not None:
         job.job_title = sanitize_text(payload.job_title)
     if payload.company_name is not None:

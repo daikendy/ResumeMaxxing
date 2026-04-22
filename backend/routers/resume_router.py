@@ -30,8 +30,13 @@ async def generate_tailored_resume(request: Request, payload: ResumeCreate, curr
     if user.generations_used >= total_allowed:
         raise QuotaExceededException()
 
-    # 2. Fetch the Job Description
-    result = await db.execute(select(TrackedJob).filter(TrackedJob.id == payload.tracked_job_id))
+    # 2. Fetch the Job Description (SECURITY: ownership check prevents IDOR)
+    result = await db.execute(
+        select(TrackedJob).filter(
+            TrackedJob.id == payload.tracked_job_id,
+            TrackedJob.user_id == current_user["id"]
+        )
+    )
     job = result.scalars().first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")

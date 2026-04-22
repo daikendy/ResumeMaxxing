@@ -45,7 +45,12 @@ async def upload_resume(request: Request, file: UploadFile = File(...), current_
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
         
     try:
+        # SECURITY (H2): Enforce max file size BEFORE reading into memory (10MB)
+        MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10MB
         contents = await file.read()
+        if len(contents) > MAX_UPLOAD_SIZE:
+            raise HTTPException(status_code=413, detail="File too large. Maximum upload size is 10MB.")
+        
         pdf_reader = PyPDF2.PdfReader(io.BytesIO(contents))
         
         # 1. Extract raw text
@@ -78,8 +83,13 @@ async def upload_resume(request: Request, file: UploadFile = File(...), current_
         json_data = await extract_resume_data(text)
         return {"resume_data": json_data}
         
+    except HTTPException:
+        raise  # Re-raise our own HTTP exceptions (400, 413)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"PDF Parsing Failed: {str(e)}")
+        # SECURITY (H4): Don't leak internal error details to client
+        from utils.logging_config import logger
+        logger.error("PDF_PARSE_FAILED", error=str(e), user_id=current_user["id"])
+        raise HTTPException(status_code=500, detail="Failed to process PDF. Please ensure it is a valid, text-based PDF file.")
 
 @router.get("/me", response_model=UserResponse)
 async def get_user_me(current_user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):

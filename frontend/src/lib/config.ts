@@ -8,9 +8,9 @@ export const SITE_CONFIG = {
   shortName: "R",
   version: "1.0.0",
   domain: "resumemaxxing.com",
-  baseUrl: process.env.NODE_ENV === 'production' 
+  baseUrl: process.env.NEXT_PUBLIC_APP_URL || (process.env.NODE_ENV === 'production' 
     ? "https://resumemaxxing.com" 
-    : "http://localhost:3000",
+    : "http://localhost:3000"),
   
   seo: {
     defaultTitle: "ResumeMaxxing | ATS-Friendly AI Resume Builder for Tech",
