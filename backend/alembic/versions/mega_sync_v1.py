@@ -1,8 +1,8 @@
 """mega_sync_production
 
-Revision ID: mega_sync_v1
+Revision ID: mega_sync_v2
 Revises: 
-Create Date: 2026-04-24 03:15:00
+Create Date: 2026-04-24 03:45:00
 
 """
 from typing import Sequence, Union
@@ -17,20 +17,19 @@ from models.roadmap_model import LearningRoadmap, SkillGap
 from models.master_resume_model import MasterResume
 
 # revision identifiers, used by Alembic.
-revision: str = 'mega_sync_v1'
+revision: str = 'mega_sync_v2'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # 🛡️ THE MEGA SYNC: TABLES
-    print("🚀 STARTING MEGA SYNC: Ensuring all tables exist...")
+    print("🚀 STARTING MEGA SYNC V2: Ensuring all tables exist...")
     bind = op.get_bind()
     Base.metadata.create_all(bind)
     print("✅ TABLE SYNC COMPLETE.")
 
     # 🕵️‍♂️ THE MEGA SYNC: COLUMNS
-    # We manually sync critical columns that might be missing from existing tables.
     inspector = sa.inspect(bind)
     
     def sync_columns(table_name, required_columns):
