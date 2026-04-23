@@ -16,6 +16,7 @@ load_dotenv()
 
 # 🛡️ Import Database metadata and all Models
 from database import Base, SQLALCHEMY_DATABASE_URL  # noqa: E402
+from models import user_model, job_model, vault_model, resume_model, roadmap_model, master_resume_model # noqa: F401
 
 # Alembic config
 config = context.config

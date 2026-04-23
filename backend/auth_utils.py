@@ -3,6 +3,8 @@ import time
 from datetime import datetime
 import httpx
 from typing import Optional
+import random
+import string
 
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -93,14 +95,13 @@ async def sync_user_to_db(clerk_user: dict, db: AsyncSession) -> User:
     user_id = clerk_user.get("id")
     
     # 🚨 THE FIX: Safe extraction with a guaranteed fallback string
-    email = clerk_user.get("email") or "demo-user@strive-platform.com"
+    email = clerk_user.get("email") or "demo-user@resumemaxxing.com"
 
     result = await db.execute(select(User).filter(User.id == user_id))
     user = result.scalars().first()
 
     if not user:
-        import random
-        import string
+
         unique_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         
         user = User(
