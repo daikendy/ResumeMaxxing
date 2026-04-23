@@ -8,16 +8,18 @@ load_dotenv()
 
 import os
 
-# 1. Look for Railway's injected URL first
+# 1. Look for Railway's injected URL or manual override
 RAILWAY_URL = os.getenv("MYSQL_URL")
+MANUAL_URL = os.getenv("SQLALCHEMY_DATABASE_URL")
 
-if RAILWAY_URL:
+if RAILWAY_URL or MANUAL_URL:
     # 🌩️ PRODUCTION: We are on Railway! 
+    TARGET_URL = RAILWAY_URL or MANUAL_URL
     # Swap the generic 'mysql://' to your async 'mysql+aiomysql://' driver
-    if RAILWAY_URL.startswith("mysql://"):
-        SQLALCHEMY_DATABASE_URL = RAILWAY_URL.replace("mysql://", "mysql+aiomysql://", 1)
+    if TARGET_URL.startswith("mysql://"):
+        SQLALCHEMY_DATABASE_URL = TARGET_URL.replace("mysql://", "mysql+aiomysql://", 1)
     else:
-        SQLALCHEMY_DATABASE_URL = RAILWAY_URL
+        SQLALCHEMY_DATABASE_URL = TARGET_URL
 else:
     # 💻 LOCAL: We are on your laptop! 
     # Fall back to your separated variables
