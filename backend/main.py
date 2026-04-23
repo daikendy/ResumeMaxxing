@@ -30,7 +30,7 @@ print(f"🚀 SYSTEM_STARTUP: Environment set to {'DEVELOPMENT' if is_dev else 'P
 # Capacitor uses capacitor://localhost (iOS) and http://localhost (Android)
 ALLOWED_ORIGINS = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:3000,http://localhost:8100,capacitor://localhost,http://localhost"
+    "http://localhost:3000,http://localhost:8100,capacitor://localhost,http://localhost,https://resume-maxxing.vercel.app"
 ).split(",")
 
 # 📝 Initialize Logging
