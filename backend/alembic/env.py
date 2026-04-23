@@ -59,6 +59,21 @@ async def run_migrations_online() -> None:
     )
 
     async with connectable.connect() as connection:
+        # 🌀 FORCE RESET CHECK: If the DB is stuck on a version we deleted, clear it.
+        try:
+            from sqlalchemy import text
+            result = await connection.execute(text("SELECT version_num FROM alembic_version"))
+            version = result.scalar()
+            
+            # If the version exists but we don't have a file for it, we reset to let mega_sync_v1 take over.
+            if version and version != 'mega_sync_v1':
+                print(f"Detected orphaned version {version}. Performing force reset...")
+                await connection.execute(text("DELETE FROM alembic_version"))
+                await connection.commit()
+        except Exception:
+            # Table probably doesn't exist yet, which is fine!
+            pass
+
         await connection.run_sync(do_run_migrations)
 
     await connectable.dispose()
