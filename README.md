@@ -1,6 +1,6 @@
 # 🚀 ResumeMaxxing
 
-![ResumeMaxxing Hero Banner](file:///C:/Users/torcu/.gemini/antigravity/brain/9b481970-13f1-4b23-988c-929988dfec25/resumemaxxing_hero_banner_1776961418818.png)
+![ResumeMaxxing Hero Banner](./assets/banner.png)
 
 > **The Industrial-Grade AI Career Engine.** Don't just apply. Maximize your potential with AI-driven resume tailoring and automated job tracking.
 
