@@ -9,7 +9,12 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 from database import Base
-from models import user_model, job_model, vault_model, resume_model, roadmap_model, master_resume_model
+from models.user_model import User
+from models.job_model import TrackedJob
+from models.vault_model import VaultSnapshot, ActivityLog
+from models.resume_model import ResumeVersion
+from models.roadmap_model import LearningRoadmap, SkillGap
+from models.master_resume_model import MasterResume
 
 # revision identifiers, used by Alembic.
 revision: str = 'mega_sync_v1'
@@ -19,10 +24,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # 🛡️ THE MEGA SYNC
-    # This uses SQLAlchemy's internal logic to create any missing tables automatically.
-    # It is safe to run even if tables already exist.
+    print("🚀 STARTING MEGA SYNC: Ensuring all tables exist...")
     bind = op.get_bind()
     Base.metadata.create_all(bind)
+    print("✅ MEGA SYNC COMPLETE: Tables verified.")
     
     # 🕵️‍♂️ SAFETY CHECK: Ensure action_code exists in activity_logs
     inspector = sa.inspect(bind)
