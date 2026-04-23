@@ -126,7 +126,7 @@ async def add_security_headers(request: Request, call_next):
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
             "img-src 'self' blob: data: https:; "
-            "connect-src 'self' capacitor://localhost http://localhost https://api.clerk.com https://*.clerk.accounts.dev https://api.openai.com; "
+            "connect-src 'self' capacitor://localhost http://localhost https://api.clerk.com https://*.clerk.accounts.dev https://*.clerk-telemetry.com https://api.openai.com https://resumemaxxing-production.up.railway.app; "
             "frame-ancestors 'none'"
         )
     response.headers["X-Content-Type-Options"] = "nosniff"
