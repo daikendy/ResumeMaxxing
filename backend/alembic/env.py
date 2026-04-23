@@ -66,8 +66,8 @@ async def run_migrations_online() -> None:
             version = result.scalar()
             
             # Reset if version is not one of our new ones.
-            if version and version not in ['mega_sync_v2']:
-                print(f"Detected version {version}. Resetting for mega_sync_v2...")
+            if version and version not in ['mega_sync_v4']:
+                print(f"Detected version {version}. Resetting for mega_sync_v4...")
                 await connection.execute(text("DELETE FROM alembic_version"))
                 await connection.commit()
         except Exception:
