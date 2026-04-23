@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
     const isDev = process.env.NODE_ENV === 'development';
     const connectSrc = isDev
       ? "connect-src * 'self' blob: data: gap:; "
-      : "connect-src 'self' capacitor://localhost http://localhost https://api.clerk.com https://*.clerk.accounts.dev https://api.openai.com; ";
+      : "connect-src 'self' capacitor://localhost http://localhost https://api.clerk.com https://*.clerk.accounts.dev https://*.clerk-telemetry.com https://api.openai.com https://resumemaxxing-production.up.railway.app; ";
 
     return [
       {
