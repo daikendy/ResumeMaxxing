@@ -6,14 +6,30 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-MYSQL_USER = os.getenv("MYSQL_USER", "root")
-MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "root")
-MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
-MYSQL_PORT = os.getenv("MYSQL_PORT", "3306")
-MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "resumemaxxing_db")
+import os
 
-# ⚡ ASYNC EVOLUTION: Use aiomysql driver for non-blocking I/O
-SQLALCHEMY_DATABASE_URL = f"mysql+aiomysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
+# 1. Look for Railway's injected URL first
+RAILWAY_URL = os.getenv("MYSQL_URL")
+
+if RAILWAY_URL:
+    # 🌩️ PRODUCTION: We are on Railway! 
+    # Swap the generic 'mysql://' to your async 'mysql+aiomysql://' driver
+    if RAILWAY_URL.startswith("mysql://"):
+        SQLALCHEMY_DATABASE_URL = RAILWAY_URL.replace("mysql://", "mysql+aiomysql://", 1)
+    else:
+        SQLALCHEMY_DATABASE_URL = RAILWAY_URL
+else:
+    # 💻 LOCAL: We are on your laptop! 
+    # Fall back to your separated variables
+    MYSQL_USER = os.getenv("MYSQL_USER", "root")
+    MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "root")
+    MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
+    MYSQL_PORT = os.getenv("MYSQL_PORT", "3306")
+    MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "resumemaxxing_db")
+    
+    SQLALCHEMY_DATABASE_URL = f"mysql+aiomysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
+
+print(f"Database configured for: {'Production (Railway)' if RAILWAY_URL else 'Local Development'}")
 
 # Set up the SQLAlchemy Async Engine
 engine = create_async_engine(
