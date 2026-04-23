@@ -90,8 +90,10 @@ async def get_current_user(token: HTTPAuthorizationCredentials = Depends(securit
 
 async def sync_user_to_db(clerk_user: dict, db: AsyncSession) -> User:
     """ Ensures Clerk User exists in local MySQL (Lazy Sync). """
-    user_id = clerk_user["id"]
-    email = clerk_user["email"]
+    user_id = clerk_user.get("id")
+    
+    # 🚨 THE FIX: Safe extraction with a guaranteed fallback string
+    email = clerk_user.get("email") or "demo-user@strive-platform.com"
 
     result = await db.execute(select(User).filter(User.id == user_id))
     user = result.scalars().first()
