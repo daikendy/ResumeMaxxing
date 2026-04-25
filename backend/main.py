@@ -112,31 +112,31 @@ async def add_security_headers(request: Request, call_next):
     # Check environment inside the function to avoid global caching issues
     current_env = os.getenv("ENVIRONMENT", "development").lower()
     
-    # 🛡️ Content-Security-Policy
-    if current_env == "development":
-        response.headers["Content-Security-Policy"] = (
-            "default-src * 'self' capacitor://localhost http://localhost data: blob: 'unsafe-inline' 'unsafe-eval'; "
-            "connect-src * 'self' blob: data: gap:; "
-            "frame-ancestors 'none'"
-        )
-    else:
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self' capacitor://localhost http://localhost; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.clerk.accounts.dev; "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-            "font-src 'self' https://fonts.gstatic.com; "
-            "img-src 'self' blob: data: https:; "
-            "connect-src 'self' capacitor://localhost http://localhost https://api.clerk.com https://*.clerk.accounts.dev https://*.clerk-telemetry.com https://api.openai.com https://*.up.railway.app; "
-            "frame-ancestors 'none'"
-        )
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    # 🛡️ TEMPORARILY DISABLED CSP FOR FRESH DEPLOYMENT SYNC
+    # if current_env == "development":
+    #     response.headers["Content-Security-Policy"] = (
+    #         "default-src * 'self' capacitor://localhost http://localhost data: blob: 'unsafe-inline' 'unsafe-eval'; "
+    #         "connect-src * 'self' blob: data: gap:; "
+    #         "frame-ancestors 'none'"
+    #     )
+    # else:
+    #     response.headers["Content-Security-Policy"] = (
+    #         "default-src 'self' capacitor://localhost http://localhost; "
+    #         "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.clerk.accounts.dev; "
+    #         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+    #         "font-src 'self' https://fonts.gstatic.com; "
+    #         "img-src 'self' blob: data: https:; "
+    #         "connect-src 'self' capacitor://localhost http://localhost https://api.clerk.com https://*.clerk.accounts.dev https://*.clerk-telemetry.com https://api.openai.com https://*.up.railway.app; "
+    #         "frame-ancestors 'none'"
+    #     )
+    # response.headers["X-Content-Type-Options"] = "nosniff"
+    # response.headers["X-Frame-Options"] = "DENY"
+    # response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    # response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     
-    # HSTS: only in production (breaks localhost without HTTPS)
-    if os.getenv("ENVIRONMENT", "development") == "production":
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    # # HSTS: only in production (breaks localhost without HTTPS)
+    # if os.getenv("ENVIRONMENT", "development") == "production":
+    #     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     
     return response
 
