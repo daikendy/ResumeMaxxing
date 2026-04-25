@@ -168,10 +168,16 @@ async def log_requests(request: Request, call_next):
     
     return response
 
-# 📡 CORS: NUCLEAR UNBLOCK FOR FRESH DEPLOYMENT
+# 📡 CORS: PRECISION UNBLOCK (Fixed for Railway)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # 🔓 Temporary: Allow everything to fix the sync
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:8100",
+        "capacitor://localhost",
+        "http://localhost",
+        "https://resume-maxxing.vercel.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
