@@ -9,7 +9,7 @@ load_dotenv()
 import os
 
 # 1. Look for Railway's injected URL or manual override
-RAILWAY_URL = os.getenv("MYSQL_URL")
+RAILWAY_URL = os.getenv("MYSQL_URL") or os.getenv("DATABASE_URL")
 MANUAL_URL = os.getenv("SQLALCHEMY_DATABASE_URL")
 
 if RAILWAY_URL or MANUAL_URL:
