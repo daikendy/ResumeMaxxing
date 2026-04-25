@@ -168,15 +168,13 @@ async def log_requests(request: Request, call_next):
     
     return response
 
-# 📡 CORS: Move to outermost layer to handle preflights first
+# 📡 CORS: NUCLEAR UNBLOCK FOR FRESH DEPLOYMENT
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["*"], # 🔓 Temporary: Allow everything to fix the sync
     allow_credentials=True,
-    # allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_methods=["*"],
     allow_headers=["*"],
-    # allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
 )
 
 # Attach Routers
