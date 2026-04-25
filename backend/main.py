@@ -168,7 +168,7 @@ async def log_requests(request: Request, call_next):
     
     return response
 
-# 📡 CORS: PRECISION UNBLOCK (Fixed for Railway)
+# 📡 CORS: PRECISION UNBLOCK (Guaranteed for Railway)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -176,8 +176,10 @@ app.add_middleware(
         "http://localhost:8100",
         "capacitor://localhost",
         "http://localhost",
-        "https://resume-maxxing.vercel.app"
+        "https://resume-maxxing.vercel.app",
+        "https://resumemaxxing-production-b1b5.up.railway.app"
     ],
+    allow_origin_regex="https://.*\.vercel\.app", # 🚀 Unlocks all Vercel previews!
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
