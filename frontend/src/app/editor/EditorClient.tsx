@@ -33,6 +33,11 @@ export default function EditorClient({ jobId }: { jobId: string }) {
         if (!token) return;
 
         store.setIsProfileLoading(true);
+        
+        // ⚡ CLEAN SLATE: Clear previous job data to prevent state bleeding
+        store.setJobDetails('', '');
+        store.initializeWithHistory([]);
+        store.setStatus('idle');
 
         // Fetch Profile
         const profile = await resumeService.getMasterResume(token);
