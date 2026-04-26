@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
     const isDev = process.env.NODE_ENV === 'development';
     const connectSrc = isDev
       ? "connect-src * 'self' blob: data: gap:; "
-      : "connect-src 'self' capacitor://localhost http://localhost https://api.clerk.com https://*.clerk.accounts.dev https://*.clerk-telemetry.com https://api.openai.com https://*.up.railway.app https://resumaxxing.tech; ";
+      : "connect-src 'self' capacitor://localhost http://localhost https://api.clerk.com https://*.clerk.accounts.dev https://*.clerk-telemetry.com https://api.openai.com https://*.up.railway.app https://resumaxxing.tech https://clerk.resumaxxing.tech; ";
 
     return [
       {
@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
           {
             key: 'Content-Security-Policy',
             value: "default-src 'self' capacitor://localhost http://localhost; " +
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://api.clerk.com https://*.clerk.accounts.dev; " +
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://api.clerk.com https://*.clerk.accounts.dev https://clerk.resumaxxing.tech; " +
               "worker-src 'self' blob:; " +
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
               "font-src 'self' https://fonts.gstatic.com; " +
