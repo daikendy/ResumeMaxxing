@@ -3,6 +3,7 @@ import "./globals.css";
 import Providers from "@/components/Providers";
 import JsonLd, { getOrganizationSchema, getSoftwareAppSchema } from "@/components/JsonLd";
 import { SITE_CONFIG } from "@/lib/config";
+import { Analytics } from "@vercel/analytics/react";
 
 export const viewport: Viewport = {
   themeColor: "#000000",
@@ -82,6 +83,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans bg-black text-white">
         <Providers>
           {children}
+          <Analytics />
         </Providers>
       </body>
     </html>

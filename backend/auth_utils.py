@@ -95,7 +95,7 @@ async def sync_user_to_db(clerk_user: dict, db: AsyncSession) -> User:
     user_id = clerk_user.get("id")
     
     # 🚨 THE FIX: Safe extraction with a guaranteed fallback string
-    email = clerk_user.get("email") or "demo-user@resumemaxxing.com"
+    email = clerk_user.get("email") or "demo-user@resumaxxing.tech"
 
     result = await db.execute(select(User).filter(User.id == user_id))
     user = result.scalars().first()
