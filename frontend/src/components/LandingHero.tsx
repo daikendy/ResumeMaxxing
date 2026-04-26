@@ -35,12 +35,12 @@ export default function LandingHero() {
         </div>
 
         <h1 className="text-5xl md:text-7xl lg:text-8xl font-heading text-white tracking-tighter uppercase leading-[0.85] mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
-          Stop guessing.<br />
-          Start <span className="bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent italic">winning.</span>
+          Stop being <span className="text-accent-primary">ghosted.</span><br />
+          Start <span className="bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent italic">Architecting.</span>
         </h1>
 
         <p className="max-w-2xl mx-auto text-sm md:text-lg font-mono text-white/40 uppercase tracking-[0.2em] leading-relaxed mb-12 animate-in fade-in slide-in-from-bottom-12 duration-700">
-          The AI Resume Architect engineered for <strong className="text-white">Software Engineers</strong>. Zero jargon. Total precision. <strong className="text-white">ATS-verified exports</strong> built for technical recruiters.
+          75% of tech resumes are rejected by robots before a human ever sees them. Our <strong className="text-white">AI-Engineered Architect Console</strong> ensures your resume passes every ATS parser with <strong className="text-white">Total Precision</strong>.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6 w-full animate-in fade-in slide-in-from-bottom-16 duration-700">
