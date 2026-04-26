@@ -5,12 +5,14 @@ import { dark } from "@clerk/themes";
 import { Toaster } from "sonner";
 import Navbar from "@/components/Navbar";
 import { tokenCache } from "@/lib/auth/tokenCache";
+import { ThemeProvider } from "next-themes";
 
 const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider
+    <ThemeProvider attribute="data-theme" defaultTheme="vanta" enableSystem={false}>
+      <ClerkProvider
       publishableKey={PUBLISHABLE_KEY!}
       localization={{
         socialButtonsBlockButton: "Authorize via {{provider}}",
@@ -18,7 +20,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         signIn: {
           start: {
             title: "ESTABLISH_UPLINK",
-            subtitle: "Authorized session for ResumeMaxxing. By continuing, you agree to our Terms & Privacy Protocols."
+            subtitle: "Authorized session for Resumaxxing. By continuing, you agree to our Terms & Privacy Protocols."
           }
         },
         signUp: {
@@ -52,5 +54,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         {children}
       </main>
     </ClerkProvider>
+    </ThemeProvider>
   );
 }

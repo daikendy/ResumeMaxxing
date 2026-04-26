@@ -4,17 +4,17 @@
  */
 
 export const SITE_CONFIG = {
-  name: "ResumeMaxxing",
-  shortName: "R",
-  version: "1.0.0",
-  domain: "resumemaxxing.com",
+  name: "Resumaxxing",
+  shortName: "RX",
+  version: "1.1.0",
+  domain: "resumaxxing.tech",
   baseUrl: process.env.NEXT_PUBLIC_APP_URL || (process.env.NODE_ENV === 'production' 
-    ? "https://resumemaxxing.com" 
+    ? "https://resumaxxing.tech" 
     : "http://localhost:3000"),
   
   seo: {
-    defaultTitle: "ResumeMaxxing | ATS-Friendly AI Resume Builder for Tech",
-    titleTemplate: "%s | ResumeMaxxing",
+    defaultTitle: "Resumaxxing | ATS-Friendly AI Resume Builder for Tech",
+    titleTemplate: "%s | Resumaxxing",
     description: "The AI Resume Architect engineered for Software Engineers and IT Professionals. Generate ATS-optimized, single-column resumes that pass every parser.",
     keywords: [
       "ATS-friendly engineering resume builder",
@@ -25,25 +25,25 @@ export const SITE_CONFIG = {
       "ATS Verified Resume"
     ],
     social: {
-      twitter: "@resumemaxxing",
-      github: "resumemaxxing"
+      twitter: "@resumaxxing",
+      github: "resumaxxing"
     },
     ogImage: "/og-image.png"
   },
 
   company: {
-    email: "support@resumemaxxing.com",
+    email: "support@resumaxxing.tech",
     address: "Global / Remote",
   },
 
   // Capacitor / Mobile settings
   mobile: {
-    appId: "com.resumemaxxing.app",
-    appName: "ResumeMaxxing",
+    appId: "com.resumaxxing.app",
+    appName: "Resumaxxing",
     downloads: {
       android: "/downloads/app-release.apk", // Centralized for easy updates
       ios: "Add to Home Screen",
-      version: "1.0.0-build.1"
+      version: "1.1.0"
     }
   }
 };

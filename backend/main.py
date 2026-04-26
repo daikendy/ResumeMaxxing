@@ -30,7 +30,7 @@ print(f"🚀 SYSTEM_STARTUP: Environment set to {'DEVELOPMENT' if is_dev else 'P
 # Capacitor uses capacitor://localhost (iOS) and http://localhost (Android)
 ALLOWED_ORIGINS = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:3000,http://localhost:8100,capacitor://localhost,http://localhost,https://resume-maxxing.vercel.app"
+    "http://localhost:3000,http://localhost:8100,capacitor://localhost,http://localhost,https://resume-maxxing.vercel.app,https://resumaxxing.tech"
 ).split(",")
 
 # 📝 Initialize Logging
@@ -126,7 +126,7 @@ async def add_security_headers(request: Request, call_next):
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
             "img-src 'self' blob: data: https:; "
-            "connect-src 'self' capacitor://localhost http://localhost https://api.clerk.com https://*.clerk.accounts.dev https://*.clerk-telemetry.com https://api.openai.com https://*.up.railway.app; "
+            "connect-src 'self' capacitor://localhost http://localhost https://api.clerk.com https://*.clerk.accounts.dev https://*.clerk-telemetry.com https://api.openai.com https://*.up.railway.app https://resumaxxing.tech; "
             "frame-ancestors 'none'"
         )
     response.headers["X-Content-Type-Options"] = "nosniff"

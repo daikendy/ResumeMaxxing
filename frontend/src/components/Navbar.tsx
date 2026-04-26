@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { SITE_CONFIG } from '@/lib/config';
 import MobileMenu from './MobileMenu';
+import ThemeToggle from './ThemeToggle';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -37,7 +38,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 w-full z-[100] backdrop-blur-md bg-black/60 px-4 sm:px-8 pt-safe-top pb-safe-top flex justify-between items-center no-print border-b border-white/5 min-h-[60px] sm:min-h-[85px]">
+      <nav className="fixed top-0 left-0 w-full z-[100] backdrop-blur-md bg-background/60 px-4 sm:px-8 pt-safe-top pb-safe-top flex justify-between items-center no-print border-b border-white/5 min-h-[60px] sm:min-h-[85px]">
         {/* Mobile: Hamburger (LEFT) | Desktop: Logo (LEFT) */}
         <div className="flex items-center gap-3 w-1/3 sm:w-auto">
           {/* Mobile Hamburger Toggle (Left on Mobile) */}
@@ -59,13 +60,13 @@ export default function Navbar() {
               whileTap={{ scale: 0.9 }}
               className="w-10 h-10 flex items-center justify-center"
             >
-              <img src="/logo_premium.png" alt="ResumeMaxxing Logo" className="w-full h-full object-contain" />
+              <img src="/logo_premium.png" alt="Resumaxxing Logo" className="w-full h-full object-contain" />
             </motion.div>
             <div className="flex flex-col">
               <h1 className="text-lg font-heading text-white tracking-[0.2em] uppercase leading-none">
                 {SITE_CONFIG.name}
               </h1>
-              <span className="text-[8px] font-mono text-cyan-accent/50 tracking-widest mt-1">
+              <span className="text-[8px] font-mono text-accent-primary/50 tracking-widest mt-1">
                 V{SITE_CONFIG.version} PREMIUM ARCHITECTURE
               </span>
             </div>
@@ -101,7 +102,7 @@ export default function Navbar() {
                     href={link.href}
                     onClick={() => playHaptic()}
                     className={`relative px-3 py-2 text-[10px] uppercase tracking-[0.15em] font-bold transition-colors flex items-center gap-2 premium-touch ${
-                      isActive ? 'text-cyan-accent' : 'text-white/40 hover:text-white'
+                      isActive ? 'text-accent-primary' : 'text-white/40 hover:text-white'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -110,7 +111,7 @@ export default function Navbar() {
                     {isActive && (
                       <motion.div
                         layoutId="nav-active"
-                        className="absolute -bottom-1 left-0 w-full h-[2px] bg-cyan-accent shadow-[0_2px_10px_rgba(0,240,255,0.5)]"
+                        className="absolute -bottom-1 left-0 w-full h-[2px] bg-accent-primary shadow-accent"
                         transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                       />
                     )}
@@ -123,10 +124,14 @@ export default function Navbar() {
 
         {/* Profile/Controls (RIGHT) */}
         <div className="flex items-center justify-end gap-3 sm:gap-6 w-1/3 sm:w-auto">
+          <div className="hidden lg:block">
+            <ThemeToggle />
+          </div>
+
           <SignedIn>
             <div className="flex items-center gap-4">
               <div className="hidden md:flex flex-col items-end mr-2">
-                <span className="text-[8px] font-mono text-cyan-accent uppercase tracking-tighter">System Status</span>
+                <span className="text-[8px] font-mono text-accent-primary uppercase tracking-tighter">System Status</span>
                 <span className="text-[10px] font-heading text-white tracking-widest uppercase truncate max-w-[150px]">
                   {displayName}
                 </span>
@@ -134,7 +139,7 @@ export default function Navbar() {
               <UserButton
                 appearance={{
                   elements: {
-                    userButtonAvatarBox: "w-9 h-9 border border-cyan-accent/20 hover:border-cyan-accent transition-colors shadow-lg",
+                    userButtonAvatarBox: "w-9 h-9 border border-accent-primary/20 hover:border-accent-primary transition-colors shadow-lg",
                   }
                 }}
               />
@@ -145,7 +150,7 @@ export default function Navbar() {
             <SignInButton mode="modal">
               <Button 
                 onClick={() => playHaptic()}
-                className="bg-cyan-accent text-black hover:bg-white border-none text-[10px] font-bold tracking-[0.2em] h-10 px-6 sm:px-8 transition-all shadow-[0_0_20px_rgba(0,240,255,0.2)] hover:shadow-white/20 premium-touch"
+                className="bg-accent-primary text-white hover:bg-white hover:text-black border-none text-[10px] font-bold tracking-[0.2em] h-10 px-6 sm:px-8 transition-all shadow-accent premium-touch"
               >
                 INITIALIZE
               </Button>

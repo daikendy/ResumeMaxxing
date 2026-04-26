@@ -168,7 +168,7 @@ const ResumePreview = memo(({ resumeData, formatBullet }: ResumePreviewProps) =>
 
       {/* FOOTER ADORNMENT */}
       <div className="print:hidden no-print mt-auto pt-6 border-t border-zinc-100 flex justify-between items-center opacity-40 text-[8px] font-sans tracking-widest uppercase text-zinc-400">
-        <span>ResumeMaxxing V0.2 PREMIUM</span>
+        <span>Resumaxxing V1.1 PREMIUM</span>
         <span>System Generated Artifact</span>
       </div>
     </motion.div>

@@ -25,11 +25,12 @@ import JobTracker from './components/JobTracker';
 import JobFormModal from './components/JobFormModal';
 import ActivityFeed from './components/ActivityFeed';
 import VaultManager from './components/VaultManager';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const STATUS_CONFIG: Record<string, { color: string, bg: string, icon: any, priority: number }> = {
   'hired': { color: 'text-emerald-400', bg: 'bg-emerald-400/10', icon: LucideShieldCheck, priority: 1 },
-  'interviewing': { color: 'text-yellow-400', bg: 'bg-yellow-400/10', icon: LucideBriefcase, priority: 2 },
-  'applied': { color: 'text-cyan-accent', bg: 'bg-cyan-accent/10', icon: LucideCheckCircle2, priority: 3 },
+  'interviewing': { color: 'text-violet-400', bg: 'bg-violet-400/10', icon: LucideBriefcase, priority: 2 },
+  'applied': { color: 'text-accent-primary', bg: 'bg-accent-primary/10', icon: LucideCheckCircle2, priority: 3 },
   'bookmarked': { color: 'text-white/40', bg: 'bg-white/5', icon: LucideClock, priority: 4 },
   'rejected': { color: 'text-red-400', bg: 'bg-red-400/10', icon: LucideX, priority: 5 },
 };
@@ -189,9 +190,9 @@ export default function DashboardPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans pb-32 relative overflow-x-hidden">
-        {/* Global HUD Overlay */}
-        <div className="hud-scanline no-print" />
+      <div className="min-h-screen bg-background selection:bg-accent-primary selection:text-white font-sans pb-32 relative overflow-x-hidden">
+        {/* Premium Background Gradient */}
+        <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-accent-primary/5 blur-[120px] pointer-events-none" />
 
         <main className="pt-24 sm:pt-32 px-4 md:px-8 max-w-[1400px] mx-auto">
           <StatsBanner stats={stats} />
@@ -233,8 +234,11 @@ export default function DashboardPage() {
         />
 
         <footer className="fixed bottom-0 left-0 w-full z-40 glass-panel px-8 py-3 flex justify-between items-center text-[9px] font-mono text-white/20 uppercase no-print">
-          <div className="flex gap-6"><span>SYNC_ROOT: ACTIVE</span><span>ARMED</span></div>
-          <div className="flex gap-4"><span>VERSION: 0.9.4_BUILD</span>{/* Link to credits/pricing could go here */}</div>
+          <div className="flex gap-6 items-center">
+            <span>SYNC_ROOT: ACTIVE</span>
+            <span>ARMED</span>
+          </div>
+          <div className="flex gap-4"><span>VERSION: 1.0.0_PRODUCTION</span></div>
         </footer>
       </div>
     </AuthGuard>

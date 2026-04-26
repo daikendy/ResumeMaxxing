@@ -46,42 +46,42 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-black industrial-grid selection:bg-cyan-accent selection:text-black font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-background selection:bg-accent-primary selection:text-white font-sans overflow-x-hidden">
 
       <LandingHero />
 
-      {/* FEATURE GRID - HIDDEN ON MOBILE FOR NATIVE FEEL */}
-      <section id="features" className="hidden md:block py-24 px-6 border-t border-white/5 relative z-10">
+      {/* FEATURE GRID */}
+      <section id="features" className="py-24 px-6 border-t border-white/5 relative z-10">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Feature 1 */}
-            <div className="p-8 bg-zinc-950/50 border border-white/5 hover:border-cyan-accent/30 transition-all group">
-              <div className="w-12 h-12 bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:bg-cyan-accent group-hover:text-black transition-all">
+            <div className="p-8 glass-panel hover:border-accent-primary/50 transition-all group rounded-2xl">
+              <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-accent-primary group-hover:text-white transition-all">
                 <LucideCpu className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-heading text-white uppercase tracking-widest mb-4">Master Identity</h3>
+              <h3 className="text-xl font-heading text-white tracking-widest mb-4">Master Identity</h3>
               <p className="text-xs font-mono text-white/40 uppercase leading-relaxed">
                 Save your tech stack once. From Kubernetes to React, store your impact and history in a perfectly indexed vault.
               </p>
             </div>
 
             {/* Feature 2 */}
-            <div className="p-8 bg-zinc-950/50 border border-white/5 hover:border-cyan-accent/30 transition-all group">
-              <div className="w-12 h-12 bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:bg-cyan-accent group-hover:text-black transition-all">
+            <div className="p-8 glass-panel hover:border-accent-primary/50 transition-all group rounded-2xl">
+              <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-accent-primary group-hover:text-white transition-all">
                 <LucideTarget className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-heading text-white uppercase tracking-widest mb-4">Tech-First Match</h3>
+              <h3 className="text-xl font-heading text-white tracking-widest mb-4">Tech-First Match</h3>
               <p className="text-xs font-mono text-white/40 uppercase leading-relaxed">
                 Instant role adaptation. We align your experience with job descriptions using precision AI that speaks "Developer."
               </p>
             </div>
 
             {/* Feature 3 */}
-            <div className="p-8 bg-zinc-950/50 border border-white/5 hover:border-cyan-accent/30 transition-all group">
-              <div className="w-12 h-12 bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:bg-cyan-accent group-hover:text-black transition-all">
+            <div className="p-8 glass-panel hover:border-accent-primary/50 transition-all group rounded-2xl">
+              <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-accent-primary group-hover:text-white transition-all">
                 <LucideShieldCheck className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-heading text-white uppercase tracking-widest mb-4">Parser Hardened</h3>
+              <h3 className="text-xl font-heading text-white tracking-widest mb-4">Parser Hardened</h3>
               <p className="text-xs font-mono text-white/40 uppercase leading-relaxed">
                 Mathematically engineered single-column templates that pass Greenhouse, Workday, and Lever parsers with 100% accuracy.
               </p>
@@ -91,22 +91,22 @@ export default function Home() {
       </section>
 
 
-      {/* CALL TO ACTION - MOBILE NATIVE VERSION */}
+      {/* CALL TO ACTION */}
       <section className="py-20 md:py-32 px-6 text-center border-t border-white/5">
         <div className="max-w-2xl mx-auto space-y-12">
           <h2 className="text-3xl md:text-5xl font-heading text-white tracking-tighter uppercase leading-[0.9]">
-            Ready to <span className="text-cyan-accent">Scale?</span>
+            Ready to <span className="bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent">Scale?</span>
           </h2>
           <SignedOut>
             <SignInButton mode="modal">
-              <Button className="w-full md:w-auto h-16 px-16 bg-white text-black hover:bg-cyan-accent uppercase font-heading font-bold tracking-[0.2em] text-sm transition-all">
+              <Button className="w-full md:w-auto h-16 px-16 bg-white text-black hover:bg-accent-primary hover:text-white uppercase font-heading font-bold tracking-[0.2em] text-sm transition-all rounded-full">
                 Create Account
               </Button>
             </SignInButton>
           </SignedOut>
           <SignedIn>
             <Link href="/dashboard" className="w-full md:w-auto">
-              <Button className="w-full md:w-auto h-16 px-16 bg-white text-black hover:bg-cyan-accent uppercase font-heading font-bold tracking-[0.2em] text-sm transition-all">
+              <Button className="w-full md:w-auto h-16 px-16 bg-white text-black hover:bg-accent-primary hover:text-white uppercase font-heading font-bold tracking-[0.2em] text-sm transition-all rounded-full">
                 Return to Dashboard
               </Button>
             </Link>

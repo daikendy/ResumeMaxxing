@@ -12,18 +12,21 @@
   --font-mono: var(--font-mono);
   --font-heading: var(--font-outfit);
 
-  --color-cyan-accent: #00F0FF;
-  --color-cyan-muted: rgba(0, 240, 255, 0.1);
-  --color-industrial-bg: #0A0A0A;
-  --color-industrial-border: rgba(255, 255, 255, 0.1);
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-secondary: var(--accent-secondary);
+  --color-accent-muted: var(--accent-muted);
+  --color-premium-border: var(--border);
+  
+  /* Legacy Mappings (Fixes Build Errors & Enables Theme-Awareness) */
+  --color-cyan-accent: var(--accent-primary);
+  --color-vanta-black: var(--background);
+  --color-vanta-gray: var(--background);
 
   --animate-scan: scan 3s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
 
-  --shadow-cyan: 0 0 10px rgba(0, 240, 255, 0.4);
-  --shadow-cyan-intense: 0 0 20px rgba(0, 240, 255, 0.6);
-
-  --spacing-safe-top: var(--safe-area-top);
-  --spacing-safe-bottom: var(--safe-area-bottom);
+  --shadow-accent: var(--shadow-accent);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
 
   @keyframes scan {
     0% { transform: translateY(-100%); opacity: 0; }
@@ -31,48 +34,78 @@
     100% { transform: translateY(100%); opacity: 0; }
   }
 
-  @keyframes pulse-cyan {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 1; }
-  }
-
-  @keyframes blink-fast {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
   }
 }
 
 :root {
-  --background: #000000;
-  --foreground: #FFFFFF;
   --font-inter: 'Inter', sans-serif;
   --font-outfit: 'Outfit', sans-serif;
   --font-sans: var(--font-outfit);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --radius: 0px;
-
+  
   /* Safe Area Insets for Mobile (Capacitor) */
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-left: env(safe-area-inset-left, 0px);
   --safe-area-right: env(safe-area-inset-right, 0px);
+}
 
+/* 🌌 DEFAULT VARIABLES (Vanta) */
+:root {
+  --background: #020203;
+  --foreground: #FFFFFF;
+  --primary: #6366f1;
+  --primary-foreground: #FFFFFF;
+  --accent-primary: #6366f1;
+  --accent-secondary: #a855f7;
+  --accent-muted: rgba(99, 102, 241, 0.1);
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.03);
+  --radius: 12px;
+  --shadow-accent: 0 0 15px rgba(99, 102, 241, 0.3);
+}
+
+/* 🦾 INDUSTRIAL THEME OVERRIDES */
+[data-theme='industrial'] {
+  --background: #000000;
+  --foreground: #FFFFFF;
   --primary: #00F0FF;
   --primary-foreground: #000000;
-
+  --accent-primary: #00F0FF;
+  --accent-secondary: #00F0FF;
+  --accent-muted: rgba(0, 240, 255, 0.1);
   --border: rgba(255, 255, 255, 0.1);
   --input: rgba(255, 255, 255, 0.05);
+  --radius: 0px;
+  --shadow-accent: 0 0 15px rgba(0, 240, 255, 0.4);
+}
+
+/* 🌌 VANTA THEME (Explicit) */
+[data-theme='vanta'] {
+  --background: #020203;
+  --foreground: #FFFFFF;
+  --primary: #6366f1;
+  --primary-foreground: #FFFFFF;
+  --accent-primary: #6366f1;
+  --accent-secondary: #a855f7;
+  --accent-muted: rgba(99, 102, 241, 0.1);
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.03);
+  --radius: 12px;
+  --shadow-accent: 0 0 15px rgba(99, 102, 241, 0.3);
 }
 
 @layer base {
   * {
-    @apply border-white/10 outline-none;
-    border-radius: 0 !important;
+    @apply border-white/5 outline-none;
     -webkit-tap-highlight-color: transparent;
   }
 
   body {
-    @apply bg-black text-white selection:bg-cyan-accent selection:text-black;
+    @apply bg-background text-white selection:bg-accent-primary selection:text-white;
     font-feature-settings: "ss01", "ss02", "cv01";
     padding-top: var(--safe-area-top);
     padding-bottom: var(--safe-area-bottom);
@@ -80,36 +113,13 @@
     padding-right: var(--safe-area-right);
     
     /* Native App Polish */
-    overscroll-behavior-y: none; /* Disable pull-to-refresh bounce */
-    -webkit-user-select: none; /* Disable text highlight by default (reenable where needed) */
+    overscroll-behavior-y: none;
+    -webkit-user-select: none;
     user-select: none;
   }
 
-  /* Utility to hide marketing clutter on native apps */
-  .no-native-app {
-    display: none !important;
-  }
-
-  /* Re-enable selection for content areas */
-  article, p, h1, h2, h3, h4, span, input, textarea, [contenteditable="true"] {
-    -webkit-user-select: text;
-    user-select: text;
-  }
-
-  /* Hide scrollbars for a cleaner 'App' feel */
-  ::-webkit-scrollbar {
-    display: none;
-  }
-  * {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
-  }
-
-  h1,
-  h2,
-  h3,
-  h4 {
-    @apply font-heading tracking-tight uppercase font-bold;
+  h1, h2, h3, h4 {
+    @apply font-heading tracking-tight font-bold;
   }
 }
 
@@ -144,34 +154,34 @@
   text-shadow: 0 0 1px rgba(255, 255, 255, 0.3);
 }
 
-.cyan-glow {
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+.premium-glow {
+  text-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
 }
 
 .hud-text-glow {
-  text-shadow: 0 0 15px rgba(0, 240, 255, 0.4), 0 0 2px rgba(255, 255, 255, 0.8);
+  text-shadow: 0 0 15px rgba(99, 102, 241, 0.4), 0 0 2px rgba(255, 255, 255, 0.8);
 }
 
 .hud-border {
-  @apply border border-cyan-accent/20 bg-black/40 backdrop-blur-md relative overflow-hidden;
+  @apply border border-accent-primary/20 bg-black/40 backdrop-blur-md relative overflow-hidden;
 }
 
 .hud-border::after {
   content: '';
-  @apply absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-accent/50 to-transparent animate-scan pointer-events-none;
+  @apply absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-accent-primary/50 to-transparent animate-scan pointer-events-none;
 }
 
 .hud-scanline {
   @apply fixed inset-0 pointer-events-none z-50 overflow-hidden;
   background: linear-gradient(
     rgba(18, 16, 16, 0) 50%,
-    rgba(0, 240, 255, 0.05) 50%
+    rgba(99, 102, 241, 0.03) 50%
   ),
   linear-gradient(
     90deg,
-    rgba(255, 0, 0, 0.02),
-    rgba(0, 255, 0, 0.01),
-    rgba(0, 0, 255, 0.02)
+    rgba(255, 0, 0, 0.01),
+    rgba(0, 255, 0, 0.005),
+    rgba(0, 0, 255, 0.01)
   );
   background-size: 100% 4px, 3px 100%;
 }
@@ -200,8 +210,8 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #00F0FF;
-  box-shadow: 0 0 15px #00F0FF;
+  background: var(--primary);
+  box-shadow: 0 0 15px var(--primary);
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -213,12 +223,12 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(0, 240, 255, 0.1);
+  background: rgba(99, 102, 241, 0.1);
   border: none;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #00F0FF;
+  background: var(--primary);
 }
 
 /* Final Scrollbar for Firefox */
